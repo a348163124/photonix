@@ -93,11 +93,23 @@ export function EditorScreen() {
     : t("editor.canvasLabels.original");
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" style={{ background: "var(--bg)" }}>
       {/* Left rail */}
-      <aside className="hidden w-48 flex-col border-r border-neutral-800 bg-neutral-900 lg:flex">
-        <div className="border-b border-neutral-800 px-3 py-2">
-          <span className="text-[11px] font-medium text-neutral-400">
+      <aside
+        className="hidden w-48 flex-col lg:flex"
+        style={{
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+        }}
+      >
+        <div
+          className="px-3 py-2"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <span
+            className="text-[11px] font-medium"
+            style={{ color: "var(--muted)" }}
+          >
             {t("editor.sidePanelImages")}
           </span>
         </div>
@@ -106,11 +118,25 @@ export function EditorScreen() {
             <button
               key={img.id}
               onClick={() => handleSelectImage(img.id)}
-              className={`w-full rounded px-2 py-1 text-left text-[10px] transition-colors ${
-                img.id === selectedImageId
-                  ? "bg-neutral-700 text-neutral-200"
-                  : "text-neutral-500 hover:bg-neutral-800 hover:text-neutral-300"
-              }`}
+              className="w-full rounded px-2 py-1 text-left text-[10px] transition-colors"
+              style={{
+                background:
+                  img.id === selectedImageId ? "var(--accent-soft)" : "transparent",
+                color:
+                  img.id === selectedImageId ? "var(--accent-strong)" : "var(--muted)",
+              }}
+              onMouseEnter={(e) => {
+                if (img.id !== selectedImageId) {
+                  e.currentTarget.style.background = "var(--bg)";
+                  e.currentTarget.style.color = "var(--fg)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (img.id !== selectedImageId) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--muted)";
+                }
+              }}
             >
               {img.filename}
             </button>
@@ -119,27 +145,42 @@ export function EditorScreen() {
       </aside>
 
       {/* Canvas area */}
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center gap-2 border-b border-neutral-800 px-3 py-1.5">
+      <div className="flex flex-1 flex-col" style={{ background: "var(--bg)" }}>
+        <div
+          className="flex items-center gap-2 px-3 py-1.5"
+          style={{
+            borderBottom: "1px solid var(--border)",
+            background: "var(--surface)",
+          }}
+        >
           <button
             onClick={() => setView("library")}
-            className="text-xs text-neutral-400 hover:text-neutral-200"
+            className="text-xs"
+            style={{ color: "var(--muted)" }}
           >
             {t("editor.backToLibrary")}
           </button>
-          <span className="text-xs text-neutral-600">|</span>
-          <span className="text-xs text-neutral-300 truncate max-w-[200px]">
+          <span className="text-xs" style={{ color: "var(--muted-2)" }}>
+            |
+          </span>
+          <span
+            className="text-xs truncate max-w-[200px]"
+            style={{ color: "var(--fg)" }}
+          >
             {selectedImage.filename}
           </span>
-          <span className="text-[10px] text-neutral-500">
+          <span className="text-[10px]" style={{ color: "var(--muted)" }}>
             ({displayLabel})
           </span>
-          <span className="text-[10px] text-neutral-600">
+          <span className="text-[10px]" style={{ color: "var(--muted-2)" }}>
             {selectedImage.width}×{selectedImage.height}
           </span>
           <div className="flex-1" />
           {brushMode !== "none" && (
-            <span className="text-[10px] text-amber-400">
+            <span
+              className="text-[10px]"
+              style={{ color: "oklch(45% 0.16 70)" }}
+            >
               {brushMode === "brush"
                 ? t("editor.canvasLabels.maskPaint")
                 : t("editor.canvasLabels.maskErase")}{" "}
@@ -147,13 +188,16 @@ export function EditorScreen() {
             </span>
           )}
           {maskDataUrl && brushMode === "none" && (
-            <span className="text-[10px] text-green-400">
+            <span
+              className="text-[10px]"
+              style={{ color: "var(--accent-strong)" }}
+            >
               {t("editor.canvasLabels.maskReady")}
             </span>
           )}
         </div>
 
-        <div className="flex-1 bg-neutral-950">
+        <div className="flex-1" style={{ background: "var(--bg)" }}>
           <Canvas
             imageSrc={resolvedSrc}
             showMaskOverlay={showMask}
@@ -169,17 +213,26 @@ export function EditorScreen() {
       </div>
 
       {/* Right panel */}
-      <aside className="flex w-72 flex-col border-l border-neutral-800 bg-neutral-900">
-        <div className="flex border-b border-neutral-800">
+      <aside
+        className="flex w-72 flex-col"
+        style={{
+          background: "var(--surface)",
+          borderLeft: "1px solid var(--border)",
+        }}
+      >
+        <div className="flex" style={{ borderBottom: "1px solid var(--border)" }}>
           {(["prompt", "mask", "history", "export"] as EditorTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`flex-1 py-2 text-xs capitalize transition-colors ${
-                activeTab === tab
-                  ? "border-b-2 border-blue-500 text-neutral-200"
-                  : "text-neutral-500 hover:text-neutral-300"
-              }`}
+              className="flex-1 py-2 text-xs capitalize transition-colors"
+              style={{
+                borderBottom:
+                  activeTab === tab
+                    ? "2px solid var(--accent)"
+                    : "2px solid transparent",
+                color: activeTab === tab ? "var(--fg)" : "var(--muted)",
+              }}
             >
               {t(`editor.tabs.${tab}` as never)}
             </button>

@@ -56,13 +56,39 @@ export function BatchDialog() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="flex max-h-[85vh] w-[640px] flex-col rounded-lg border border-neutral-800 bg-neutral-900 shadow-xl">
-        <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2">
-          <h2 className="text-sm font-medium text-neutral-200">{t("batch.edit.title")}</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgb(0 0 0 / 45%)" }}
+    >
+      <div
+        className="flex max-h-[85vh] w-[640px] flex-col"
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border-strong)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--shadow-lg)",
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-4 py-2"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <h2
+            className="text-sm font-medium"
+            style={{ color: "var(--fg)" }}
+          >
+            {t("batch.edit.title")}
+          </h2>
           <button
             onClick={() => setDialogOpen(false)}
-            className="rounded text-neutral-500 hover:text-neutral-200"
+            className="rounded"
+            style={{
+              color: "var(--muted)",
+              background: "transparent",
+              border: "none",
+              fontSize: 16,
+              cursor: "pointer",
+            }}
           >
             ✕
           </button>
@@ -71,7 +97,10 @@ export function BatchDialog() {
         <div className="flex-1 overflow-y-auto p-4">
           {/* Prompt */}
           <div>
-            <label className="mb-1 block text-[11px] text-neutral-400">
+            <label
+              className="mb-1 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("batch.edit.promptLabel", {
                 count: selectedImages.length,
                 plural: selectedImages.length === 1 ? "" : "s",
@@ -85,13 +114,16 @@ export function BatchDialog() {
               }}
               placeholder={t("batch.edit.promptPlaceholder")}
               rows={4}
-              className="w-full resize-none rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
+              className="px-textarea"
             />
           </div>
 
           {/* Preset shortcuts */}
           <div className="mt-3">
-            <label className="mb-1 block text-[11px] text-neutral-400">
+            <label
+              className="mb-1 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("batch.edit.pickPreset")}
             </label>
             <div className="grid grid-cols-2 gap-1">
@@ -101,11 +133,20 @@ export function BatchDialog() {
                   <button
                     key={p.id}
                     onClick={() => applyPreset(p)}
-                    className={`rounded px-2 py-1 text-left text-[10px] transition-colors ${
-                      presetId === p.id
-                        ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                        : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                    }`}
+                    className={`px-btn ${presetId === p.id ? "" : ""}`}
+                    style={{
+                      justifyContent: "flex-start",
+                      textAlign: "left",
+                      padding: "6px 10px",
+                      fontSize: 11,
+                      ...(presetId === p.id
+                        ? {
+                            background: "var(--accent-soft)",
+                            borderColor: "var(--accent)",
+                            color: "var(--accent-strong)",
+                          }
+                        : {}),
+                    }}
                   >
                     {p.name}
                   </button>
@@ -115,7 +156,10 @@ export function BatchDialog() {
 
           {/* MVP3: Style profile selector */}
           <div className="mt-3">
-            <label className="mb-1 block text-[11px] text-neutral-400">
+            <label
+              className="mb-1 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("batch.edit.styleLabel")}
             </label>
             <select
@@ -129,9 +173,11 @@ export function BatchDialog() {
                 if (v === "__none__") setSelectedStyleId(null);
                 else setSelectedStyleId(v);
               }}
-              className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+              className="px-select"
             >
-              <option value="__none__">{t("editor.prompt.noStyleOption")}</option>
+              <option value="__none__">
+                {t("editor.prompt.noStyleOption")}
+              </option>
               {styles.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -143,7 +189,10 @@ export function BatchDialog() {
 
           {/* Quality */}
           <div className="mt-3">
-            <label className="mb-1 block text-[11px] text-neutral-400">
+            <label
+              className="mb-1 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("batch.edit.qualityLabel")}
             </label>
             <div className="flex gap-1">
@@ -151,10 +200,8 @@ export function BatchDialog() {
                 <button
                   key={m}
                   onClick={() => setQualityMode(m)}
-                  className={`flex-1 rounded px-2 py-1 text-xs capitalize transition-colors ${
-                    qualityMode === m
-                      ? "bg-blue-600 text-white"
-                      : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                  className={`px-btn flex-1 capitalize ${
+                    qualityMode === m ? "px-btn-primary" : ""
                   }`}
                 >
                   {m === "draft"
@@ -167,9 +214,15 @@ export function BatchDialog() {
 
           {/* Queue status */}
           {items.length > 0 && (
-            <div className="mt-4 border-t border-neutral-800 pt-4">
+            <div
+              className="mt-4 pt-4"
+              style={{ borderTop: "1px solid var(--border)" }}
+            >
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[11px] text-neutral-400">
+                <span
+                  className="text-[11px]"
+                  style={{ color: "var(--muted)" }}
+                >
                   {t("batch.edit.queueSummary", {
                     total: items.length,
                     queued,
@@ -179,27 +232,32 @@ export function BatchDialog() {
                   })}
                 </span>
                 {queued > 0 && (
-                  <button
-                    onClick={cancelQueued}
-                    className="rounded bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400 hover:bg-neutral-700"
-                  >
+                  <button onClick={cancelQueued} className="px-btn" style={{ padding: "2px 8px", fontSize: 10 }}>
                     {t("batch.edit.cancelPending")}
                   </button>
                 )}
               </div>
-              <div className="max-h-60 overflow-y-auto rounded border border-neutral-800">
+              <div
+                className="max-h-60 overflow-y-auto rounded"
+                style={{ border: "1px solid var(--border)" }}
+              >
                 {items.map((it) => (
                   <div
                     key={it.id}
-                    className="flex items-center gap-2 border-b border-neutral-800 px-2 py-1 last:border-b-0"
+                    className="flex items-center gap-2 px-2 py-1 last:border-b-0"
+                    style={{ borderBottom: "1px solid var(--border)" }}
                   >
                     <StatusBadge status={it.status} />
-                    <span className="flex-1 truncate text-[10px] text-neutral-300">
+                    <span
+                      className="flex-1 truncate text-[10px]"
+                      style={{ color: "var(--fg)" }}
+                    >
                       {it.imageFilename}
                     </span>
                     {it.error && (
                       <span
-                        className="text-[9px] text-red-400 max-w-[180px] truncate"
+                        className="max-w-[180px] truncate text-[9px]"
+                        style={{ color: "var(--danger)" }}
                         title={it.error}
                       >
                         {it.error}
@@ -208,7 +266,8 @@ export function BatchDialog() {
                     {it.status === "failed" && (
                       <button
                         onClick={() => retryItem(it.id)}
-                        className="rounded bg-neutral-800 px-1.5 py-0.5 text-[9px] text-neutral-300 hover:bg-neutral-700"
+                        className="px-btn"
+                        style={{ padding: "2px 6px", fontSize: 9 }}
                       >
                         {t("common.retry")}
                       </button>
@@ -218,7 +277,13 @@ export function BatchDialog() {
                       it.status === "canceled") && (
                       <button
                         onClick={() => removeItem(it.id)}
-                        className="text-[10px] text-neutral-500 hover:text-neutral-200"
+                        className="text-[10px]"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--muted-2)",
+                          cursor: "pointer",
+                        }}
                       >
                         ×
                       </button>
@@ -230,17 +295,17 @@ export function BatchDialog() {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-neutral-800 px-4 py-3">
-          <button
-            onClick={() => setDialogOpen(false)}
-            className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700"
-          >
+        <div
+          className="flex items-center justify-end gap-2 px-4 py-3"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <button onClick={() => setDialogOpen(false)} className="px-btn">
             {t("common.close")}
           </button>
           <button
             onClick={handleStart}
             disabled={!prompt.trim() || selectedImages.length === 0 || isRunning}
-            className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40"
+            className="px-btn px-btn-primary"
           >
             {isRunning
               ? t("batch.edit.runningButton")
@@ -253,18 +318,20 @@ export function BatchDialog() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    queued: "bg-neutral-700 text-neutral-300",
-    running: "bg-amber-700 text-amber-200 animate-pulse",
-    succeeded: "bg-green-700 text-green-200",
-    failed: "bg-red-700 text-red-200",
-    canceled: "bg-neutral-600 text-neutral-400",
+  const palette: Record<string, { bg: string; fg: string; pulse?: boolean }> = {
+    queued: { bg: "var(--surface-2)", fg: "var(--muted)" },
+    running: { bg: "oklch(95% 0.05 70)", fg: "oklch(40% 0.13 70)", pulse: true },
+    succeeded: { bg: "var(--accent-soft)", fg: "var(--accent-strong)" },
+    failed: { bg: "oklch(96% 0.04 25)", fg: "var(--danger)" },
+    canceled: { bg: "var(--surface-2)", fg: "var(--muted-2)" },
   };
+  const p = palette[status] ?? palette.queued!;
   return (
     <span
       className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] capitalize ${
-        styles[status] ?? "bg-neutral-700"
+        p.pulse ? "animate-pulse" : ""
       }`}
+      style={{ background: p.bg, color: p.fg }}
     >
       {status}
     </span>

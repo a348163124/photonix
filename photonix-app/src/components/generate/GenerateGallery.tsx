@@ -25,20 +25,41 @@ export function GenerateGallery() {
 
   if (images.length === 0 && !isGenerating) {
     return (
-      <div className="flex h-full items-center justify-center border-t border-neutral-800 bg-neutral-900/40">
-        <p className="text-xs text-neutral-600">
-          {t("generate.galleryEmptyHint")}
-        </p>
+      <div
+        className="flex h-full items-center justify-center"
+        style={{
+          background: "var(--surface-2)",
+          borderTop: "1px solid var(--border)",
+          color: "var(--muted-2)",
+          fontSize: 12,
+        }}
+      >
+        <p>{t("generate.galleryEmptyHint")}</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-x-auto overflow-y-hidden border-t border-neutral-800 bg-neutral-900/40 px-3 py-3">
+    <div
+      className="h-full overflow-x-auto overflow-y-hidden px-3 py-3"
+      style={{
+        background: "var(--surface-2)",
+        borderTop: "1px solid var(--border)",
+      }}
+    >
       <div className="flex h-full gap-2">
         {isGenerating && (
-          <div className="aspect-square h-full shrink-0 animate-pulse rounded-lg border border-neutral-800 bg-neutral-800/60 flex items-center justify-center">
-            <span className="text-[10px] text-neutral-500">{t("generate.galleryGenerating")}</span>
+          <div
+            className="flex aspect-square h-full shrink-0 animate-pulse items-center justify-center"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              color: "var(--muted-2)",
+              fontSize: 11,
+            }}
+          >
+            <span>{t("generate.galleryGenerating")}</span>
           </div>
         )}
         {images.map((img) => (
@@ -78,11 +99,15 @@ function GalleryThumb({
   return (
     <button
       onClick={onClick}
-      className={`group relative aspect-square h-full shrink-0 overflow-hidden rounded-lg border transition-all ${
-        isSelected
-          ? "border-blue-500 ring-1 ring-blue-500"
-          : "border-neutral-800 hover:border-neutral-600"
-      }`}
+      className="group relative aspect-square h-full shrink-0 overflow-hidden transition-all"
+      style={{
+        background: "var(--surface)",
+        border: isSelected
+          ? "2px solid var(--accent)"
+          : "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: isSelected ? "0 0 0 2px var(--accent-soft)" : undefined,
+      }}
       title={image.prompt}
     >
       {src ? (
@@ -93,17 +118,34 @@ function GalleryThumb({
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-neutral-600">
+        <div
+          className="flex h-full w-full items-center justify-center"
+          style={{ background: "var(--surface-2)", color: "var(--muted-2)" }}
+        >
           <span className="text-2xl">✨</span>
         </div>
       )}
 
-      {/* Delete button */}
       <span
         role="button"
         onClick={onDelete}
-        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded bg-black/70 text-[10px] text-neutral-300 hover:bg-red-700 hover:text-white group-hover:flex"
+        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded text-[10px] group-hover:flex"
+        style={{
+          background: "rgb(255 255 255 / 92%)",
+          color: "var(--muted)",
+          border: "1px solid var(--border)",
+        }}
         aria-label="Delete generation"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--danger)";
+          e.currentTarget.style.color = "oklch(99% 0 0)";
+          e.currentTarget.style.borderColor = "var(--danger)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgb(255 255 255 / 92%)";
+          e.currentTarget.style.color = "var(--muted)";
+          e.currentTarget.style.borderColor = "var(--border)";
+        }}
       >
         ×
       </span>

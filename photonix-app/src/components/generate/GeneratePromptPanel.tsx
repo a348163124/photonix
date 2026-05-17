@@ -95,7 +95,6 @@ export function GeneratePromptPanel() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Ctrl/Cmd + Enter triggers generate
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       handleGenerate();
@@ -109,8 +108,16 @@ export function GeneratePromptPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-neutral-800 px-4 py-3">
-        <h2 className="text-xs font-medium text-neutral-200">{t("nav.generate")}</h2>
+      <div
+        className="px-4 py-3"
+        style={{ borderBottom: "1px solid var(--border)" }}
+      >
+        <h2
+          className="text-xs font-medium"
+          style={{ color: "var(--fg)" }}
+        >
+          {t("nav.generate")}
+        </h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -118,12 +125,16 @@ export function GeneratePromptPanel() {
           {/* Prompt */}
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="text-[11px] text-neutral-400">
+              <label
+                className="text-[11px]"
+                style={{ color: "var(--muted)" }}
+              >
                 {t("generate.promptLabel")}
               </label>
               <button
                 onClick={openPromptCenter}
-                className="text-[10px] text-blue-400 hover:underline"
+                className="text-[10px] hover:underline"
+                style={{ color: "var(--accent-strong)" }}
               >
                 {t("generate.openPromptCenter")}
               </button>
@@ -134,16 +145,20 @@ export function GeneratePromptPanel() {
               onKeyDown={handleKeyDown}
               placeholder={t("generate.promptPlaceholder")}
               rows={6}
-              className="w-full resize-none rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
+              className="px-textarea"
+              style={{ minHeight: 0 }}
             />
-            <p className="mt-1 text-[9px] text-neutral-600">
+            <p className="mt-1 text-[9px]" style={{ color: "var(--muted-2)" }}>
               {t("generate.shortcutHint")}
             </p>
           </div>
 
           {/* Size */}
           <div>
-            <label className="mb-1 block text-[11px] text-neutral-400">
+            <label
+              className="mb-1 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("generate.sizeLabel")}
             </label>
             <div className="grid grid-cols-2 gap-1">
@@ -151,11 +166,8 @@ export function GeneratePromptPanel() {
                 <button
                   key={s.value}
                   onClick={() => setSize(s.value)}
-                  className={`rounded px-2 py-1 text-xs transition-colors ${
-                    size === s.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                  }`}
+                  className={`px-btn ${size === s.value ? "px-btn-primary" : ""}`}
+                  style={{ justifyContent: "center" }}
                 >
                   {t(s.tKey)}
                   <span className="ml-1 text-[9px] opacity-60">{s.value}</span>
@@ -166,7 +178,10 @@ export function GeneratePromptPanel() {
 
           {/* Quality */}
           <div>
-            <label className="mb-1 block text-[11px] text-neutral-400">
+            <label
+              className="mb-1 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("generate.qualityLabel")}
             </label>
             <div className="flex gap-1">
@@ -174,10 +189,8 @@ export function GeneratePromptPanel() {
                 <button
                   key={q.value}
                   onClick={() => setQuality(q.value)}
-                  className={`flex-1 rounded px-2 py-1 text-xs transition-colors ${
-                    quality === q.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                  className={`px-btn flex-1 ${
+                    quality === q.value ? "px-btn-primary" : ""
                   }`}
                 >
                   {t(q.tKey)}
@@ -190,18 +203,29 @@ export function GeneratePromptPanel() {
           <button
             onClick={handleGenerate}
             disabled={!prompt.trim() || isGenerating}
-            className="rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-btn px-btn-primary"
+            style={{ padding: "10px 12px", fontSize: 13 }}
           >
             {isGenerating ? t("generate.generating") : t("generate.generateButton")}
           </button>
 
           {/* Error */}
-          {lastError && <p className="text-xs text-red-400">{lastError}</p>}
+          {lastError && (
+            <p className="text-xs" style={{ color: "var(--danger)" }}>
+              {lastError}
+            </p>
+          )}
 
-          {/* Quick prompts — kept English only on purpose; these are seed
+          {/* Quick prompts — kept in English on purpose; they are seed
               examples for English generation, not UI chrome. */}
-          <div className="border-t border-neutral-800 pt-3">
-            <label className="mb-1.5 block text-[11px] text-neutral-400">
+          <div
+            className="pt-3"
+            style={{ borderTop: "1px solid var(--border)" }}
+          >
+            <label
+              className="mb-1.5 block text-[11px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("generate.quickPrompts")}
             </label>
             <div className="flex flex-col gap-1">
@@ -209,7 +233,14 @@ export function GeneratePromptPanel() {
                 <button
                   key={i}
                   onClick={() => setPrompt(p)}
-                  className="rounded bg-neutral-800 px-2 py-1.5 text-left text-[10px] text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 transition-colors"
+                  className="px-btn"
+                  style={{
+                    justifyContent: "flex-start",
+                    textAlign: "left",
+                    fontSize: 11,
+                    padding: "6px 10px",
+                    color: "var(--muted)",
+                  }}
                   title={p}
                 >
                   {p.length > 60 ? `${p.slice(0, 60)}...` : p}

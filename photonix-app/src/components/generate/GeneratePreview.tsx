@@ -63,8 +63,10 @@ export function GeneratePreview({ image }: Props) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-neutral-400">{t("generate.preview.noImage")}</p>
-          <p className="mt-1 text-xs text-neutral-600">
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
+            {t("generate.preview.noImage")}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: "var(--muted-2)" }}>
             {t("generate.preview.noImageHint")}
           </p>
         </div>
@@ -75,17 +77,26 @@ export function GeneratePreview({ image }: Props) {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 px-3 py-1.5">
-        <span className="text-xs text-neutral-300 truncate flex-1">
+      <div
+        className="flex items-center gap-2 px-3 py-1.5"
+        style={{
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <span
+          className="flex-1 truncate text-xs"
+          style={{ color: "var(--fg)" }}
+        >
           {image.prompt}
         </span>
-        <span className="text-[10px] text-neutral-600">
+        <span className="text-[10px]" style={{ color: "var(--muted-2)" }}>
           {image.width}×{image.height} · {image.size} · {image.quality}
         </span>
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-500 transition-colors disabled:opacity-50"
+          className="px-btn px-btn-primary"
         >
           {exporting ? t("generate.preview.exporting") : t("generate.preview.exportPng")}
         </button>
@@ -97,10 +108,12 @@ export function GeneratePreview({ image }: Props) {
           <img
             src={src}
             alt={image.prompt}
-            className="max-h-full max-w-full object-contain rounded"
+            className="max-h-full max-w-full rounded object-contain"
           />
         ) : (
-          <div className="text-neutral-600 text-sm">{t("generate.preview.loading")}</div>
+          <div className="text-sm" style={{ color: "var(--muted-2)" }}>
+            {t("generate.preview.loading")}
+          </div>
         )}
       </div>
     </div>

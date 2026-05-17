@@ -107,9 +107,9 @@ export function StyleDetail({
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             disabled={isBuiltIn}
-            className="w-full bg-transparent text-base font-medium text-neutral-100 outline-none disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full bg-transparent text-base font-medium px-fg outline-none disabled:cursor-not-allowed disabled:opacity-70"
           />
-          <p className="mt-0.5 text-[10px] text-neutral-500">
+          <p className="mt-0.5 text-[10px] px-muted-2">
             {style.source === "preset"
               ? t("style.sourcePreset")
               : style.source === "reference_analysis"
@@ -120,7 +120,7 @@ export function StyleDetail({
         <div className="flex items-center gap-1">
           <button
             onClick={handleDuplicate}
-            className="rounded bg-neutral-800 px-2 py-1 text-[10px] text-neutral-300 hover:bg-neutral-700"
+            className="px-btn"
           >
             {t("style.duplicate")}
           </button>
@@ -144,7 +144,7 @@ export function StyleDetail({
               setDraft({ ...draft, category: e.target.value as StyleProfile["category"] })
             }
             disabled={isBuiltIn}
-            className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 disabled:opacity-70"
+            className="w-full rounded px-input"
           >
             <option value="landscape">{t("style.categories.landscape")}</option>
             <option value="portrait">{t("style.categories.portrait")}</option>
@@ -158,8 +158,8 @@ export function StyleDetail({
             onClick={handleSetDefault}
             className={`w-full rounded px-2 py-1 text-xs ${
               defaultStyleId === style.id
-                ? "bg-blue-600/40 text-blue-200"
-                : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                ? "px-btn-primary"
+                : "px-bg px-fg hover:px-surface-bg"
             }`}
           >
             {defaultStyleId === style.id ? t("style.isDefault") : t("style.setAsDefault")}
@@ -173,7 +173,7 @@ export function StyleDetail({
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           disabled={isBuiltIn}
           rows={2}
-          className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 disabled:opacity-70"
+          className="w-full resize-none rounded px-input"
         />
       </Field>
 
@@ -183,7 +183,7 @@ export function StyleDetail({
           onChange={(e) => setDraft({ ...draft, styleSummary: e.target.value })}
           disabled={isBuiltIn}
           rows={2}
-          className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 disabled:opacity-70"
+          className="w-full resize-none rounded px-input"
         />
       </Field>
 
@@ -193,7 +193,7 @@ export function StyleDetail({
           onChange={(e) => setDraft({ ...draft, positivePrompt: e.target.value })}
           disabled={isBuiltIn}
           rows={4}
-          className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 disabled:opacity-70"
+          className="w-full resize-none rounded px-input"
         />
       </Field>
 
@@ -203,7 +203,7 @@ export function StyleDetail({
           onChange={(e) => setDraft({ ...draft, negativePrompt: e.target.value })}
           disabled={isBuiltIn}
           rows={2}
-          className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 disabled:opacity-70"
+          className="w-full resize-none rounded px-input"
         />
       </Field>
 
@@ -222,7 +222,7 @@ export function StyleDetail({
               })
             }
             disabled={isBuiltIn}
-            className="w-full rounded bg-neutral-800 px-2 py-1 text-xs disabled:opacity-70"
+            className="w-full rounded px-input"
           >
             <option value="cool">{t("style.temperature.cool")}</option>
             <option value="neutral">{t("style.temperature.neutral")}</option>
@@ -243,7 +243,7 @@ export function StyleDetail({
               })
             }
             disabled={isBuiltIn}
-            className="w-full rounded bg-neutral-800 px-2 py-1 text-xs disabled:opacity-70"
+            className="w-full rounded px-input"
           >
             <option value="low">{t("style.saturation.low")}</option>
             <option value="natural">{t("style.saturation.natural")}</option>
@@ -264,7 +264,7 @@ export function StyleDetail({
               })
             }
             disabled={isBuiltIn}
-            className="w-full rounded bg-neutral-800 px-2 py-1 text-xs disabled:opacity-70"
+            className="w-full rounded px-input"
           >
             <option value="soft">{t("style.contrast.soft")}</option>
             <option value="balanced">{t("style.contrast.balanced")}</option>
@@ -275,7 +275,7 @@ export function StyleDetail({
 
       {/* Preservation flags */}
       <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-2 text-[11px] text-neutral-400">
+        <label className="flex items-center gap-2 text-[11px] px-muted">
           <input
             type="checkbox"
             checked={draft.preserveIdentity}
@@ -285,7 +285,7 @@ export function StyleDetail({
           />
           {t("style.fields.preserveIdentity")}
         </label>
-        <label className="flex items-center gap-2 text-[11px] text-neutral-400">
+        <label className="flex items-center gap-2 text-[11px] px-muted">
           <input
             type="checkbox"
             checked={draft.preserveComposition}
@@ -299,18 +299,18 @@ export function StyleDetail({
 
       {/* Save button */}
       {!isBuiltIn && (
-        <div className="flex items-center justify-end gap-2 border-t border-neutral-800 pt-3">
+        <div className="flex items-center justify-end gap-2 border-t pt-3">
           <button
             onClick={() => setDraft(style)}
             disabled={!dirty}
-            className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
+            className="px-btn"
           >
             {t("common.reset")}
           </button>
           <button
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40"
+            className="px-btn px-btn-primary"
           >
             {saving ? t("style.analyzer.saving") : t("common.save")}
           </button>
@@ -329,10 +329,11 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+      <label className="mb-1 block text-[10px] uppercase tracking-wide px-muted-2">
         {label}
       </label>
       {children}
     </div>
   );
 }
+

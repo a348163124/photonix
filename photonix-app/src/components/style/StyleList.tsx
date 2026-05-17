@@ -31,7 +31,7 @@ export function StyleList({
         if (list.length === 0) return null;
         return (
           <div key={cat} className="mb-2">
-            <div className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-wide text-neutral-600">
+            <div className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-wide ">
               {categoryLabel(cat)}
             </div>
             {list.map((style) => (
@@ -40,25 +40,25 @@ export function StyleList({
                 onClick={() => onSelect(style.id)}
                 className={`flex w-full items-start gap-2 rounded px-2 py-1.5 text-left transition-colors ${
                   selectedId === style.id
-                    ? "bg-neutral-700"
-                    : "hover:bg-neutral-800"
+                    ? ""
+                    : "hover:"
                 }`}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-1">
-                    <span className="text-[12px] text-neutral-200">{style.name}</span>
+                    <span className="text-[12px] ">{style.name}</span>
                     {defaultStyleId === style.id && (
                       <span className="rounded bg-blue-600/40 px-1 py-0 text-[8px] font-medium text-blue-200">
                         {t("style.defaultBadge")}
                       </span>
                     )}
                     {style.source === "preset" && (
-                      <span className="rounded bg-neutral-700 px-1 py-0 text-[8px] text-neutral-400">
+                      <span className="rounded  px-1 py-0 text-[8px] ">
                         {t("style.builtInBadge")}
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 line-clamp-1 text-[10px] text-neutral-500">
+                  <div className="mt-0.5 line-clamp-1 text-[10px] ">
                     {style.description || style.styleSummary}
                   </div>
                 </div>
@@ -70,3 +70,4 @@ export function StyleList({
     </div>
   );
 }
+

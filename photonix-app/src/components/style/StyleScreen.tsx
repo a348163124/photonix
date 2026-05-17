@@ -18,19 +18,28 @@ export function StyleScreen() {
   const selected = styles.find((s) => s.id === selectedId) ?? null;
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" style={{ background: "var(--bg)" }}>
       {/* Left list */}
-      <div className="flex w-72 flex-col border-r border-neutral-800 bg-neutral-900">
-        <div className="flex border-b border-neutral-800">
+      <div
+        className="flex w-72 flex-col"
+        style={{
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+        }}
+      >
+        <div className="flex" style={{ borderBottom: "1px solid var(--border)" }}>
           {(["library", "analyze"] as Tab[]).map((tabId) => (
             <button
               key={tabId}
               onClick={() => setTab(tabId)}
-              className={`flex-1 py-2 text-xs capitalize transition-colors ${
-                tab === tabId
-                  ? "border-b-2 border-blue-500 text-neutral-200"
-                  : "text-neutral-500 hover:text-neutral-300"
-              }`}
+              className="flex-1 py-2 text-xs transition-colors"
+              style={{
+                borderBottom:
+                  tab === tabId
+                    ? "2px solid var(--accent)"
+                    : "2px solid transparent",
+                color: tab === tabId ? "var(--fg)" : "var(--muted)",
+              }}
             >
               {tabId === "library" ? t("style.libraryTab") : t("style.analyzeTab")}
             </button>
@@ -39,15 +48,15 @@ export function StyleScreen() {
         {tab === "library" && (
           <StyleList
             selectedId={selectedId}
-            onSelect={(id) => {
-              setSelectedId(id);
-            }}
+            onSelect={(id) => setSelectedId(id)}
           />
         )}
         {tab === "analyze" && (
-          <div className="p-3 text-[11px] text-neutral-400">
+          <div className="p-3 text-[11px]" style={{ color: "var(--muted)" }}>
             <p className="mb-2">{t("style.pickReferenceHint")}</p>
-            <p className="text-[10px] text-neutral-500">{t("style.privacyShort")}</p>
+            <p className="text-[10px]" style={{ color: "var(--muted-2)" }}>
+              {t("style.privacyShort")}
+            </p>
           </div>
         )}
       </div>
@@ -57,13 +66,13 @@ export function StyleScreen() {
         {tab === "library" && selected && (
           <StyleDetail
             style={selected}
-            onDeleted={() => {
-              setSelectedId(null);
-            }}
+            onDeleted={() => setSelectedId(null)}
           />
         )}
         {tab === "library" && !selected && (
-          <p className="text-xs text-neutral-500">{t("promptCenter.detail.noTemplate")}</p>
+          <p className="text-xs" style={{ color: "var(--muted)" }}>
+            {t("promptCenter.detail.noTemplate")}
+          </p>
         )}
         {tab === "analyze" && (
           <ReferenceStyleAnalyzer

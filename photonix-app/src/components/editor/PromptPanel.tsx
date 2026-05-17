@@ -254,13 +254,19 @@ export function PromptPanel() {
       {/* Prompt input */}
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <label className="text-[11px] text-neutral-400">{t("editor.prompt.label")}</label>
+          <label
+            className="text-[11px]"
+            style={{ color: "var(--muted)" }}
+          >
+            {t("editor.prompt.label")}
+          </label>
           <button
             onClick={() => {
               usePromptTemplateStore.getState().setApplyTarget("editor");
               useAppStore.getState().setView("promptCenter");
             }}
-            className="text-[10px] text-blue-400 hover:underline"
+            className="text-[10px] hover:underline"
+            style={{ color: "var(--accent-strong)" }}
           >
             {t("editor.prompt.openPromptCenter")}
           </button>
@@ -269,58 +275,101 @@ export function PromptPanel() {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={t("editor.prompt.placeholder")}
-          className="h-28 w-full resize-none rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
+          className="px-textarea h-28"
+          style={{ minHeight: 0 }}
         />
       </div>
 
       {/* Mask indicator */}
       {maskDataUrl && (
-        <div className="flex items-center gap-1.5 rounded bg-amber-900/20 px-2 py-1">
-          <span className="text-[10px] text-amber-400">{t("editor.canvasLabels.maskActive")}</span>
-          <span className="text-[10px] text-neutral-500">{t("editor.canvasLabels.maskActiveSuffix")}</span>
+        <div
+          className="flex items-center gap-1.5 rounded px-2 py-1"
+          style={{
+            background: "oklch(95% 0.05 70)",
+            color: "oklch(40% 0.13 70)",
+          }}
+        >
+          <span className="text-[10px]">
+            {t("editor.canvasLabels.maskActive")}
+          </span>
+          <span
+            className="text-[10px]"
+            style={{ color: "var(--muted)" }}
+          >
+            {t("editor.canvasLabels.maskActiveSuffix")}
+          </span>
         </div>
       )}
 
       {/* Upload proxy profile indicator */}
-      <div className="flex items-center justify-between rounded bg-neutral-800/50 px-2 py-1">
-        <span className="text-[10px] text-neutral-500">{t("editor.prompt.uploadProxy")}</span>
-        <span className="text-[10px] text-neutral-300 capitalize">
+      <div
+        className="flex items-center justify-between rounded px-2 py-1"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+          {t("editor.prompt.uploadProxy")}
+        </span>
+        <span
+          className="text-[10px] capitalize"
+          style={{ color: "var(--fg)" }}
+        >
           {uploadProxyProfile.replace("_", " ")}
         </span>
       </div>
 
       {/* Preserve toggles */}
       <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-2 text-[11px] text-neutral-400">
+        <label
+          className="flex items-center gap-2 text-[11px]"
+          style={{ color: "var(--muted)" }}
+        >
           <input
             type="checkbox"
             checked={preserveIdentity}
             onChange={(e) => setPreserveIdentity(e.target.checked)}
-            className="rounded accent-blue-500"
+            className="rounded"
+            style={{ accentColor: "var(--accent)" }}
           />
           {t("editor.prompt.preserveIdentity")}
         </label>
-        <label className="flex items-center gap-2 text-[11px] text-neutral-400">
+        <label
+          className="flex items-center gap-2 text-[11px]"
+          style={{ color: "var(--muted)" }}
+        >
           <input
             type="checkbox"
             checked={preserveComposition}
             onChange={(e) => setPreserveComposition(e.target.checked)}
-            className="rounded accent-blue-500"
+            className="rounded"
+            style={{ accentColor: "var(--accent)" }}
           />
           {t("editor.prompt.preserveComposition")}
         </label>
       </div>
 
       {/* MVP3: Style profile selector */}
-      <div className="rounded bg-neutral-800/50 p-2">
+      <div
+        className="rounded p-2"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-wide text-neutral-500">
+          <span
+            className="text-[10px] uppercase tracking-wide"
+            style={{ color: "var(--muted-2)" }}
+          >
             {t("editor.prompt.stylePanel")}
           </span>
           {activeStyle && (
             <button
               onClick={() => setSelectedStyleId(null)}
-              className="text-[9px] text-neutral-500 hover:text-neutral-200"
+              className="text-[9px] hover:underline"
+              style={{ color: "var(--muted)" }}
             >
               {t("common.clear")}
             </button>
@@ -337,7 +386,7 @@ export function PromptPanel() {
             if (v === "__none__") setSelectedStyleId(null);
             else setSelectedStyleId(v);
           }}
-          className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+          className="px-select"
         >
           <option value="__none__">{t("editor.prompt.noStyleOption")}</option>
           {styles.map((s) => (
@@ -348,20 +397,35 @@ export function PromptPanel() {
           ))}
         </select>
         {activeStyle && (
-          <p className="mt-1 line-clamp-2 text-[10px] text-neutral-500">
+          <p
+            className="mt-1 line-clamp-2 text-[10px]"
+            style={{ color: "var(--muted)" }}
+          >
             {activeStyle.styleSummary}
           </p>
         )}
       </div>
 
       {/* MVP3: Candidate generation */}
-      <div className="rounded bg-neutral-800/50 p-2">
-        <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+      <div
+        className="rounded p-2"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <span
+          className="mb-1 block text-[10px] uppercase tracking-wide"
+          style={{ color: "var(--muted-2)" }}
+        >
           {t("editor.prompt.candidatePanel")}
         </span>
         <div className="grid grid-cols-2 gap-1.5">
           <div>
-            <label className="mb-0.5 block text-[9px] text-neutral-500">
+            <label
+              className="mb-0.5 block text-[9px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("editor.prompt.candidateCount")}
             </label>
             <div className="flex gap-0.5">
@@ -369,11 +433,10 @@ export function PromptPanel() {
                 <button
                   key={n}
                   onClick={() => setCandidateCount(n)}
-                  className={`flex-1 rounded px-1 py-0.5 text-[10px] ${
-                    candidateCount === n
-                      ? "bg-blue-600 text-white"
-                      : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                  className={`px-btn flex-1 ${
+                    candidateCount === n ? "px-btn-primary" : ""
                   }`}
+                  style={{ padding: "4px 8px", fontSize: 10 }}
                 >
                   {n}
                 </button>
@@ -381,13 +444,17 @@ export function PromptPanel() {
             </div>
           </div>
           <div>
-            <label className="mb-0.5 block text-[9px] text-neutral-500">
+            <label
+              className="mb-0.5 block text-[9px]"
+              style={{ color: "var(--muted)" }}
+            >
               {t("editor.prompt.candidateMode")}
             </label>
             <select
               value={candidateMode}
               onChange={(e) => setCandidateMode(e.target.value as CandidateMode)}
-              className="w-full rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-200"
+              className="px-select"
+              style={{ padding: "4px 8px", fontSize: 11 }}
             >
               <option value="natural">{t("editor.prompt.modes.natural")}</option>
               <option value="cinematic">{t("editor.prompt.modes.cinematic")}</option>
@@ -401,7 +468,13 @@ export function PromptPanel() {
         <button
           onClick={handleGenerateCandidates}
           disabled={!prompt.trim() || candidateRunning}
-          className="mt-2 w-full rounded bg-purple-600 px-2 py-1 text-[10px] font-medium text-white transition-colors hover:bg-purple-500 disabled:opacity-40"
+          className="px-btn mt-2 w-full"
+          style={{
+            background: "oklch(60% 0.18 290)",
+            borderColor: "oklch(60% 0.18 290)",
+            color: "oklch(99% 0 0)",
+            fontSize: 11,
+          }}
         >
           {candidateRunning
             ? t("editor.prompt.runningCandidates")
@@ -414,14 +487,16 @@ export function PromptPanel() {
         <button
           onClick={() => handleGenerate("draft")}
           disabled={!prompt.trim()}
-          className="flex-1 rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-btn px-btn-primary flex-1"
+          style={{ padding: "8px 12px" }}
         >
           {t("editor.prompt.generateDraft")}
         </button>
         <button
           onClick={() => handleGenerate("final")}
           disabled={!prompt.trim()}
-          className="flex-1 rounded bg-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-btn flex-1"
+          style={{ padding: "8px 12px" }}
         >
           {t("editor.prompt.final")}
         </button>
@@ -429,15 +504,30 @@ export function PromptPanel() {
 
       {/* Status */}
       {error && (
-        <p className="text-xs text-red-400 mt-1">{error}</p>
+        <p className="mt-1 text-xs" style={{ color: "var(--danger)" }}>
+          {error}
+        </p>
       )}
       {lastResult && (
-        <p className="text-xs text-green-400 mt-1">{lastResult}</p>
+        <p
+          className="mt-1 text-xs"
+          style={{ color: "var(--accent-strong)" }}
+        >
+          {lastResult}
+        </p>
       )}
 
       {/* Quick presets */}
-      <div className="mt-2 border-t border-neutral-800 pt-2">
-        <label className="mb-1.5 block text-[11px] text-neutral-400">{t("editor.prompt.presets")}</label>
+      <div
+        className="mt-2 pt-2"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
+        <label
+          className="mb-1.5 block text-[11px]"
+          style={{ color: "var(--muted)" }}
+        >
+          {t("editor.prompt.presets")}
+        </label>
         <PresetsList
           onApply={applyPreset}
           onSaveCustom={savePromptAsPreset}
@@ -446,8 +536,16 @@ export function PromptPanel() {
       </div>
 
       {/* Recent prompts */}
-      <div className="mt-2 border-t border-neutral-800 pt-2">
-        <label className="mb-1.5 block text-[11px] text-neutral-400">{t("editor.prompt.recent")}</label>
+      <div
+        className="mt-2 pt-2"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
+        <label
+          className="mb-1.5 block text-[11px]"
+          style={{ color: "var(--muted)" }}
+        >
+          {t("editor.prompt.recent")}
+        </label>
         <RecentPromptsList onSelect={setPrompt} />
       </div>
     </div>
@@ -472,16 +570,13 @@ function PresetsList({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1 flex-wrap">
+      <div className="flex flex-wrap items-center gap-1">
         {(["landscape", "portrait", "custom"] as const).map((cat) => (
           <button
             key={cat}
             onClick={() => setCategory(cat)}
-            className={`rounded px-1.5 py-0.5 text-[10px] capitalize transition-colors ${
-              category === cat
-                ? "bg-blue-600/30 text-blue-300"
-                : "bg-neutral-800 text-neutral-500 hover:text-neutral-300"
-            }`}
+            className={`px-chip ${category === cat ? "active" : ""}`}
+            style={{ padding: "2px 8px", fontSize: 10 }}
           >
             {cat}
           </button>
@@ -489,15 +584,19 @@ function PresetsList({
         <div className="flex-1" />
         <button
           onClick={onSaveCustom}
-          className="rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 transition-colors"
+          className="px-btn"
+          style={{ padding: "2px 8px", fontSize: 10 }}
           title="Save current prompt as a custom preset"
         >
           + Save
         </button>
       </div>
-      <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+      <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
         {filtered.length === 0 && (
-          <p className="text-[10px] text-neutral-600 px-1 py-2">
+          <p
+            className="px-1 py-2 text-[10px]"
+            style={{ color: "var(--muted-2)" }}
+          >
             {category === "custom"
               ? "No custom presets yet. Click + Save to add one."
               : "No presets in this category."}
@@ -506,22 +605,42 @@ function PresetsList({
         {filtered.map((preset) => (
           <div
             key={preset.id}
-            className="group flex items-start gap-1 rounded bg-neutral-800 px-2 py-1 hover:bg-neutral-700"
+            className="group flex items-start gap-1 rounded px-2 py-1"
+            style={{
+              background: "var(--surface-2)",
+              border: "1px solid var(--border)",
+            }}
           >
             <button
               onClick={() => onApply(preset)}
               className="flex-1 text-left"
               title={preset.promptTemplate}
             >
-              <div className="text-[11px] text-neutral-200">{preset.name}</div>
-              <div className="text-[9px] text-neutral-500 line-clamp-1">
+              <div className="text-[11px]" style={{ color: "var(--fg)" }}>
+                {preset.name}
+              </div>
+              <div
+                className="line-clamp-1 text-[9px]"
+                style={{ color: "var(--muted)" }}
+              >
                 {preset.description}
               </div>
             </button>
             {preset.isCustom && (
               <button
                 onClick={() => onDeleteCustom(preset.id)}
-                className="hidden h-5 w-5 items-center justify-center rounded text-[10px] text-neutral-500 hover:bg-red-700 hover:text-white group-hover:flex"
+                className="hidden h-5 w-5 items-center justify-center rounded text-[10px] group-hover:flex"
+                style={{
+                  color: "var(--muted-2)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--danger)";
+                  e.currentTarget.style.color = "oklch(99% 0 0)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--muted-2)";
+                }}
                 title="Delete custom preset"
               >
                 ×
@@ -539,19 +658,32 @@ function RecentPromptsList({ onSelect }: { onSelect: (prompt: string) => void })
 
   if (recent.length === 0) {
     return (
-      <p className="text-[10px] text-neutral-600">
+      <p className="text-[10px]" style={{ color: "var(--muted-2)" }}>
         Your recent prompts will appear here.
       </p>
     );
   }
 
   return (
-    <div className="max-h-32 overflow-y-auto flex flex-col gap-0.5">
+    <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto">
       {recent.slice(0, 8).map((entry) => (
         <button
           key={entry.id}
           onClick={() => onSelect(entry.rawPrompt)}
-          className="rounded bg-neutral-800 px-2 py-1 text-left text-[10px] text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 transition-colors line-clamp-2"
+          className="line-clamp-2 rounded px-2 py-1 text-left text-[10px] transition-colors"
+          style={{
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            color: "var(--muted)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--bg)";
+            e.currentTarget.style.color = "var(--fg)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--surface-2)";
+            e.currentTarget.style.color = "var(--muted)";
+          }}
           title={entry.rawPrompt}
         >
           {entry.rawPrompt}

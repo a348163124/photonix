@@ -119,14 +119,36 @@ export function BatchExportDialog() {
   const skipped = items.filter((it) => it.status === "skipped").length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="flex max-h-[90vh] w-[760px] flex-col rounded-lg border border-neutral-800 bg-neutral-900 shadow-xl">
-        <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2">
-          <h2 className="text-sm font-medium text-neutral-200">{t("batch.export.title")}</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgb(0 0 0 / 45%)" }}
+    >
+      <div
+        className="flex max-h-[90vh] w-[760px] flex-col"
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border-strong)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--shadow-lg)",
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-4 py-2"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <h2 className="text-sm font-medium" style={{ color: "var(--fg)" }}>
+            {t("batch.export.title")}
+          </h2>
           <button
             onClick={handleClose}
             disabled={isRunning}
-            className="rounded text-neutral-500 hover:text-neutral-200 disabled:opacity-40"
+            style={{
+              color: "var(--muted)",
+              background: "transparent",
+              border: "none",
+              fontSize: 16,
+              cursor: "pointer",
+            }}
           >
             ✕
           </button>
@@ -137,7 +159,10 @@ export function BatchExportDialog() {
             {/* ── LEFT column: source + output ──────────────── */}
             <div className="flex flex-col gap-3">
               <div>
-                <label className="mb-1 block text-[11px] text-neutral-400">
+                <label
+                  className="mb-1 block text-[11px]"
+                  style={{ color: "var(--muted)" }}
+                >
                   {t("batch.export.sourceSelectionLabel")}
                 </label>
                 <div className="flex flex-col gap-1">
@@ -159,30 +184,39 @@ export function BatchExportDialog() {
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] text-neutral-400">
+                <label
+                  className="mb-1 block text-[11px]"
+                  style={{ color: "var(--muted)" }}
+                >
                   {t("batch.export.outputFolderLabel")}
                 </label>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={pickOutputFolder}
-                    className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-700"
-                  >
-                    {outputFolder ? t("batch.export.changeFolder") : t("batch.export.pickFolder")}
+                  <button onClick={pickOutputFolder} className="px-btn">
+                    {outputFolder
+                      ? t("batch.export.changeFolder")
+                      : t("batch.export.pickFolder")}
                   </button>
-                  <span className="flex-1 truncate text-[10px] text-neutral-500" title={outputFolder ?? ""}>
+                  <span
+                    className="flex-1 truncate text-[10px]"
+                    style={{ color: "var(--muted)" }}
+                    title={outputFolder ?? ""}
+                  >
                     {outputFolder ?? t("batch.export.noneChosen")}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] text-neutral-400">
+                <label
+                  className="mb-1 block text-[11px]"
+                  style={{ color: "var(--muted)" }}
+                >
                   {t("batch.export.presetLabel")}
                 </label>
                 <select
                   value={presetId}
                   onChange={(e) => setPresetId(e.target.value as ExportPresetId)}
-                  className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+                  className="px-select"
                 >
                   {EXPORT_PRESETS.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -193,23 +227,31 @@ export function BatchExportDialog() {
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] text-neutral-400">
+                <label
+                  className="mb-1 block text-[11px]"
+                  style={{ color: "var(--muted)" }}
+                >
                   {t("batch.export.filenameLabel")}
                 </label>
                 <input
                   value={filenameTemplate}
                   onChange={(e) => setFilenameTemplate(e.target.value)}
-                  className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+                  className="px-input"
                 />
                 {previewFilenames.length > 0 && (
                   <ul className="mt-1 space-y-0.5">
                     {previewFilenames.map((f, i) => (
-                      <li key={i} className="truncate text-[10px] text-neutral-500" title={f}>
+                      <li
+                        key={i}
+                        className="truncate text-[10px]"
+                        style={{ color: "var(--muted)" }}
+                        title={f}
+                      >
                         → {f}
                       </li>
                     ))}
                     {items.length > previewFilenames.length && (
-                      <li className="text-[10px] text-neutral-600">
+                      <li className="text-[10px]" style={{ color: "var(--muted-2)" }}>
                         {t("batch.export.moreItems", {
                           count: items.length - previewFilenames.length,
                         })}
@@ -217,13 +259,16 @@ export function BatchExportDialog() {
                     )}
                   </ul>
                 )}
-                <p className="mt-1 text-[9px] text-neutral-600">
+                <p className="mt-1 text-[9px]" style={{ color: "var(--muted-2)" }}>
                   {t("batch.export.filenameTokensHint")}
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] text-neutral-400">
+                <label
+                  className="mb-1 block text-[11px]"
+                  style={{ color: "var(--muted)" }}
+                >
                   {t("batch.export.onConflictLabel")}
                 </label>
                 <div className="flex gap-1">
@@ -231,10 +276,8 @@ export function BatchExportDialog() {
                     <button
                       key={p}
                       onClick={() => setOverwritePolicy(p)}
-                      className={`flex-1 rounded px-2 py-1 text-[10px] capitalize transition-colors ${
-                        overwritePolicy === p
-                          ? "bg-blue-600 text-white"
-                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                      className={`px-btn flex-1 capitalize ${
+                        overwritePolicy === p ? "px-btn-primary" : ""
                       }`}
                     >
                       {p === "rename"
@@ -256,9 +299,15 @@ export function BatchExportDialog() {
           </div>
 
           {/* Queue preview */}
-          <div className="mt-4 border-t border-neutral-800 pt-3">
+          <div
+            className="mt-4 pt-3"
+            style={{ borderTop: "1px solid var(--border)" }}
+          >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-[11px] text-neutral-400">
+              <span
+                className="text-[11px]"
+                style={{ color: "var(--muted)" }}
+              >
                 {t("batch.export.queueSummary", {
                   total: items.length,
                   queued,
@@ -271,14 +320,21 @@ export function BatchExportDialog() {
               <button
                 onClick={refreshPreview}
                 disabled={previewing || isRunning}
-                className="rounded bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400 hover:bg-neutral-700 disabled:opacity-40"
+                className="px-btn"
+                style={{ padding: "2px 8px", fontSize: 10 }}
               >
                 {previewing ? t("batch.export.refreshing") : t("batch.export.refresh")}
               </button>
             </div>
-            <div className="max-h-48 overflow-y-auto rounded border border-neutral-800">
+            <div
+              className="max-h-48 overflow-y-auto rounded"
+              style={{ border: "1px solid var(--border)" }}
+            >
               {items.length === 0 && (
-                <p className="px-3 py-4 text-center text-[10px] text-neutral-600">
+                <p
+                  className="px-3 py-4 text-center text-[10px]"
+                  style={{ color: "var(--muted-2)" }}
+                >
                   {selectionMode === "favorited_candidates"
                     ? t("batch.export.emptyFavorites")
                     : t("batch.export.emptyImages")}
@@ -287,19 +343,27 @@ export function BatchExportDialog() {
               {items.map((it) => (
                 <div
                   key={it.id}
-                  className="flex items-center gap-2 border-b border-neutral-800 px-2 py-1 last:border-b-0"
+                  className="flex items-center gap-2 px-2 py-1 last:border-b-0"
+                  style={{ borderBottom: "1px solid var(--border)" }}
                 >
                   <StatusBadge status={it.status} />
-                  <span className="flex-1 truncate text-[10px] text-neutral-300" title={it.imageFilename}>
+                  <span
+                    className="flex-1 truncate text-[10px]"
+                    style={{ color: "var(--fg)" }}
+                    title={it.imageFilename}
+                  >
                     {it.imageFilename}
                   </span>
-                  <span className="shrink-0 truncate text-[9px] text-neutral-500" style={{ maxWidth: 120 }}>
+                  <span
+                    className="shrink-0 truncate text-[9px]"
+                    style={{ color: "var(--muted)", maxWidth: 120 }}
+                  >
                     {it.selectionLabel}
                   </span>
                   {it.error && (
                     <span
-                      className="shrink-0 truncate text-[9px] text-red-400"
-                      style={{ maxWidth: 180 }}
+                      className="shrink-0 truncate text-[9px]"
+                      style={{ color: "var(--danger)", maxWidth: 180 }}
                       title={it.error}
                     >
                       {it.error}
@@ -311,25 +375,28 @@ export function BatchExportDialog() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-neutral-800 px-4 py-3">
+        <div
+          className="flex items-center justify-end gap-2 px-4 py-3"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
           <button
             onClick={() => clearItems()}
             disabled={isRunning || items.length === 0}
-            className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
+            className="px-btn"
           >
             {t("batch.export.clearQueue")}
           </button>
           <button
             onClick={handleClose}
             disabled={isRunning}
-            className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
+            className="px-btn"
           >
             {t("common.close")}
           </button>
           <button
             onClick={handleStart}
             disabled={items.length === 0 || isRunning || !outputFolder}
-            className="rounded bg-green-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-40"
+            className="px-btn px-btn-primary"
           >
             {isRunning
               ? t("batch.export.exportingButton")
@@ -352,19 +419,23 @@ function SelectionRadio<T extends string>({
   current: T;
   onChange: (v: T) => void;
 }) {
+  const active = current === value;
   return (
     <button
       onClick={() => onChange(value)}
-      className={`flex items-center gap-2 rounded px-2 py-1 text-left text-[11px] transition-colors ${
-        current === value
-          ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-      }`}
+      className="flex items-center gap-2 rounded px-2 py-1 text-left text-[11px] transition-colors"
+      style={{
+        background: active ? "var(--accent-soft)" : "var(--surface)",
+        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+        color: active ? "var(--accent-strong)" : "var(--muted)",
+      }}
     >
       <span
-        className={`h-3 w-3 rounded-full border ${
-          current === value ? "border-blue-300 bg-blue-400" : "border-neutral-500"
-        }`}
+        className="h-3 w-3 rounded-full"
+        style={{
+          border: `1px solid ${active ? "var(--accent)" : "var(--border-strong)"}`,
+          background: active ? "var(--accent)" : "transparent",
+        }}
       />
       {label}
     </button>
@@ -372,18 +443,21 @@ function SelectionRadio<T extends string>({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    queued: "bg-neutral-700 text-neutral-300",
-    running: "bg-amber-700 text-amber-200 animate-pulse",
-    succeeded: "bg-green-700 text-green-200",
-    failed: "bg-red-700 text-red-200",
-    skipped: "bg-neutral-600 text-neutral-400",
+  const palette: Record<string, { bg: string; fg: string; pulse?: boolean }> = {
+    queued: { bg: "var(--surface-2)", fg: "var(--muted)" },
+    running: { bg: "oklch(95% 0.05 70)", fg: "oklch(40% 0.13 70)", pulse: true },
+    succeeded: { bg: "var(--accent-soft)", fg: "var(--accent-strong)" },
+    failed: { bg: "oklch(96% 0.04 25)", fg: "var(--danger)" },
+    skipped: { bg: "var(--surface-2)", fg: "var(--muted-2)" },
+    canceled: { bg: "var(--surface-2)", fg: "var(--muted-2)" },
   };
+  const p = palette[status] ?? palette.queued!;
   return (
     <span
       className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] capitalize ${
-        styles[status] ?? "bg-neutral-700"
+        p.pulse ? "animate-pulse" : ""
       }`}
+      style={{ background: p.bg, color: p.fg }}
     >
       {status}
     </span>

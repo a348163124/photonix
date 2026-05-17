@@ -92,7 +92,7 @@ export function ReferenceStyleAnalyzer({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium text-neutral-200">
+      <h2 className="text-sm font-medium ">
         {t("style.analyzer.heading")}
       </h2>
 
@@ -100,12 +100,12 @@ export function ReferenceStyleAnalyzer({
       <div className="flex items-center gap-2">
         <button
           onClick={pickImage}
-          className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-700"
+          className="rounded  px-3 py-1.5 text-xs  hover:"
         >
           {imagePath ? t("style.analyzer.changeImage") : t("style.analyzer.pickImage")}
         </button>
         {imagePath && (
-          <span className="truncate text-[10px] text-neutral-500" title={imagePath}>
+          <span className="truncate text-[10px] " title={imagePath}>
             {imagePath.split(/[\\/]/).pop()}
           </span>
         )}
@@ -117,16 +117,16 @@ export function ReferenceStyleAnalyzer({
       </p>
 
       {/* Vision model indicator */}
-      <div className="flex items-center justify-between rounded bg-neutral-800/50 px-2 py-1">
-        <span className="text-[10px] text-neutral-500">
+      <div className="flex items-center justify-between rounded  px-2 py-1">
+        <span className="text-[10px] ">
           {t("style.analyzer.visionModelLabel")}
         </span>
-        <span className="text-[10px] text-neutral-300">
+        <span className="text-[10px] ">
           {provider.visionModel?.trim() ||
             t("style.analyzer.visionModelFallback", { model: provider.textModel })}
         </span>
       </div>
-      <p className="text-[9px] text-neutral-600">{t("style.analyzer.visionModelHelp")}</p>
+      <p className="text-[9px] ">{t("style.analyzer.visionModelHelp")}</p>
 
       <button
         onClick={runAnalysis}
@@ -138,14 +138,14 @@ export function ReferenceStyleAnalyzer({
 
       {/* Results */}
       {analysis && draft && (
-        <div className="border-t border-neutral-800 pt-3 flex flex-col gap-3">
-          <h3 className="text-xs font-medium text-neutral-300">
+        <div className="border-t  pt-3 flex flex-col gap-3">
+          <h3 className="text-xs font-medium ">
             {t("style.analyzer.extractedHeading")}
           </h3>
 
           {/* Palette */}
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
+            <div className="mb-1 text-[10px] uppercase tracking-wide ">
               {t("style.analyzer.palette")}
             </div>
             <div className="flex flex-wrap gap-1">
@@ -164,7 +164,7 @@ export function ReferenceStyleAnalyzer({
           </div>
 
           {/* Local stats */}
-          <div className="grid grid-cols-3 gap-2 text-[10px] text-neutral-400">
+          <div className="grid grid-cols-3 gap-2 text-[10px] ">
             <Stat
               label={t("style.analyzer.warmCool")}
               value={analysis.localColor.warmCoolBalance.toFixed(2)}
@@ -181,31 +181,31 @@ export function ReferenceStyleAnalyzer({
 
           {/* AI summary */}
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+            <label className="mb-1 block text-[10px] uppercase tracking-wide ">
               {t("style.analyzer.summary")}
             </label>
-            <p className="rounded bg-neutral-800 p-2 text-[11px] text-neutral-300">
+            <p className="rounded text-[11px] ">
               {analysis.ai.summary}
             </p>
           </div>
 
           {/* Editable draft */}
-          <div className="border-t border-neutral-800 pt-3">
-            <h3 className="mb-2 text-xs font-medium text-neutral-300">
+          <div className="border-t  pt-3">
+            <h3 className="mb-2 text-xs font-medium ">
               {t("style.analyzer.saveHeading")}
             </h3>
             <div className="flex flex-col gap-2">
               <input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+                className="px-input"
                 placeholder={t("style.analyzer.stylePlaceholder")}
               />
               <textarea
                 value={draft.description}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 rows={2}
-                className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+                className="px-textarea"
                 placeholder={t("style.analyzer.descPlaceholder")}
               />
               <textarea
@@ -214,7 +214,7 @@ export function ReferenceStyleAnalyzer({
                   setDraft({ ...draft, positivePrompt: e.target.value })
                 }
                 rows={4}
-                className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+                className="px-textarea"
                 placeholder={t("style.analyzer.positivePlaceholder")}
               />
               <textarea
@@ -223,7 +223,7 @@ export function ReferenceStyleAnalyzer({
                   setDraft({ ...draft, negativePrompt: e.target.value })
                 }
                 rows={2}
-                className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+                className="px-textarea"
                 placeholder={t("style.analyzer.negativePlaceholder")}
               />
               <button
@@ -243,11 +243,12 @@ export function ReferenceStyleAnalyzer({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded bg-neutral-800 px-2 py-1.5">
-      <div className="text-[9px] uppercase tracking-wide text-neutral-500">
+    <div className="rounded  px-2 py-1.5">
+      <div className="text-[9px] uppercase tracking-wide ">
         {label}
       </div>
-      <div className="text-[11px] text-neutral-200">{value}</div>
+      <div className="text-[11px] ">{value}</div>
     </div>
   );
 }
+

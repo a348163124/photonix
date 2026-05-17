@@ -62,23 +62,43 @@ function ToastNotification({ toast: t }: { toast: ToastItem }) {
     return () => clearTimeout(timer);
   }, [t.id, t.duration, removeToast]);
 
-  const colors = {
-    success: "border-green-600 bg-green-950/90 text-green-200",
-    error: "border-red-600 bg-red-950/90 text-red-200",
-    info: "border-blue-600 bg-blue-950/90 text-blue-200",
+  const palette: Record<ToastItem["type"], { bg: string; fg: string; border: string }> = {
+    success: {
+      bg: "var(--accent-soft)",
+      fg: "var(--accent-strong)",
+      border: "var(--accent)",
+    },
+    error: {
+      bg: "oklch(96% 0.04 25)",
+      fg: "var(--danger)",
+      border: "var(--danger)",
+    },
+    info: {
+      bg: "var(--surface)",
+      fg: "var(--fg)",
+      border: "var(--border-strong)",
+    },
   };
+  const c = palette[t.type];
 
   return (
     <div
-      className={`rounded-lg border px-4 py-2 text-xs shadow-lg backdrop-blur transition-all duration-300 ${
-        colors[t.type]
-      } ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+      className={`rounded-lg border px-4 py-2 text-xs shadow-lg transition-all duration-300 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      }`}
+      style={{
+        background: c.bg,
+        color: c.fg,
+        borderColor: c.border,
+        boxShadow: "var(--shadow-md)",
+      }}
     >
       <div className="flex items-center gap-2">
         <span>{t.message}</span>
         <button
           onClick={() => removeToast(t.id)}
-          className="ml-2 text-neutral-400 hover:text-white"
+          className="ml-2"
+          style={{ color: "var(--muted)" }}
         >
           ×
         </button>

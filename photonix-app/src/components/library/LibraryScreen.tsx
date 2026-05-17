@@ -162,55 +162,45 @@ export function LibraryScreen() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" style={{ background: "var(--bg)" }}>
       {/* Toolbar */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 px-4 py-2">
-        <button
-          onClick={handleImport}
-          className="rounded bg-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-600 transition-colors"
-        >
+      <div
+        className="flex items-center gap-2 px-4 py-2"
+        style={{
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <button onClick={handleImport} className="px-btn px-btn-primary">
           {t("library.importFolder")}
         </button>
-        <button
-          onClick={loadImages}
-          className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
-        >
+        <button onClick={loadImages} className="px-btn">
           {t("common.refresh")}
         </button>
         <button
           onClick={toggleSelectMode}
-          className={`rounded px-3 py-1 text-xs transition-colors ${
-            selectMode
-              ? "bg-blue-600 text-white"
-              : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-          }`}
+          className={`px-btn ${selectMode ? "px-btn-primary" : ""}`}
         >
           {selectMode ? t("library.cancelSelectMode") : t("library.selectMode")}
         </button>
         {selectMode && (
           <>
-            <button
-              onClick={selectAllVisible}
-              className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
-            >
+            <button onClick={selectAllVisible} className="px-btn">
               {t("library.selectAll")}
             </button>
-            <button
-              onClick={clearSelection}
-              className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
-            >
+            <button onClick={clearSelection} className="px-btn">
               {t("common.clear")}
             </button>
             <button
               onClick={openBatchDialog}
               disabled={selectedIds.size === 0}
-              className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-500 transition-colors disabled:opacity-40"
+              className="px-btn px-btn-primary"
             >
               {t("library.batchEditCount", { count: selectedIds.size })}
             </button>
             <button
               onClick={openBatchExportDialog}
-              className="rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-500 transition-colors"
+              className="px-btn px-btn-primary"
               title={t("library.batchExport")}
             >
               {t("library.batchExport")}
@@ -220,15 +210,19 @@ export function LibraryScreen() {
         {!selectMode && (
           <button
             onClick={openBatchExportDialog}
-            className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
+            className="px-btn"
             title={t("library.batchExport")}
           >
             {t("library.batchExport")}
           </button>
         )}
         <div className="flex-1" />
-        {importError && <span className="text-xs text-red-400">{importError}</span>}
-        <span className="text-xs text-neutral-500">
+        {importError && (
+          <span className="text-xs" style={{ color: "var(--danger)" }}>
+            {importError}
+          </span>
+        )}
+        <span className="text-xs" style={{ color: "var(--muted)" }}>
           {t("library.imageCount", { count: images.length })}
         </span>
       </div>
@@ -238,8 +232,15 @@ export function LibraryScreen() {
         {images.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
-              <p className="text-sm text-neutral-400">{t("library.empty")}</p>
-              <p className="mt-1 text-xs text-neutral-600">{t("library.emptyHint")}</p>
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
+                {t("library.empty")}
+              </p>
+              <p
+                className="mt-1 text-xs"
+                style={{ color: "var(--muted-2)" }}
+              >
+                {t("library.emptyHint")}
+              </p>
             </div>
           </div>
         ) : (
@@ -289,11 +290,15 @@ function ThumbnailCard({
   return (
     <button
       onClick={onClick}
-      className={`group relative aspect-square overflow-hidden rounded-lg border transition-all hover:shadow-lg ${
-        isSelected
-          ? "border-blue-500 ring-2 ring-blue-500"
-          : "border-neutral-800 hover:border-neutral-600"
-      }`}
+      className="group relative aspect-square overflow-hidden transition-all hover:shadow-lg"
+      style={{
+        background: "var(--surface)",
+        border: isSelected
+          ? "2px solid var(--accent)"
+          : "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: isSelected ? "0 0 0 2px var(--accent-soft)" : undefined,
+      }}
     >
       {thumbSrc ? (
         <img
@@ -303,7 +308,10 @@ function ThumbnailCard({
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full items-center justify-center bg-neutral-900 text-neutral-600">
+        <div
+          className="flex h-full items-center justify-center"
+          style={{ background: "var(--bg)", color: "var(--muted-2)" }}
+        >
           <span className="text-3xl">🖼️</span>
         </div>
       )}
@@ -311,19 +319,40 @@ function ThumbnailCard({
       {/* Selection checkbox */}
       {selectMode && (
         <div
-          className={`absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded border ${
+          className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded border"
+          style={
             isSelected
-              ? "border-blue-500 bg-blue-600 text-white"
-              : "border-neutral-500 bg-black/40 text-transparent"
-          }`}
+              ? {
+                  background: "var(--accent)",
+                  borderColor: "var(--accent)",
+                  color: "oklch(99% 0 0)",
+                }
+              : {
+                  background: "rgb(255 255 255 / 80%)",
+                  borderColor: "var(--border-strong)",
+                  color: "transparent",
+                }
+          }
         >
           {isSelected ? "✓" : ""}
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-        <p className="truncate text-[10px] text-neutral-300">{image.filename}</p>
-        <p className="text-[9px] text-neutral-500">
+      <div
+        className="absolute inset-x-0 bottom-0 p-2"
+        style={{
+          background:
+            "linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, rgb(0 0 0 / 65%) 100%)",
+          color: "oklch(99% 0 0)",
+        }}
+      >
+        <p
+          className="truncate text-[10px]"
+          style={{ color: "rgb(255 255 255 / 90%)" }}
+        >
+          {image.filename}
+        </p>
+        <p className="text-[9px]" style={{ color: "rgb(255 255 255 / 65%)" }}>
           {image.width}×{image.height} · {formatFileSize(image.fileSizeBytes)}
         </p>
       </div>

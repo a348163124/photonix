@@ -34,12 +34,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <h2 className="text-sm font-medium text-red-400 mb-2">
               Something went wrong
             </h2>
-            <p className="text-xs text-neutral-400 mb-4">
+            <p className="text-xs  mb-4">
               {this.state.error?.message ?? "An unexpected error occurred"}
             </p>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
-              className="rounded bg-neutral-700 px-4 py-1.5 text-xs text-neutral-200 hover:bg-neutral-600"
+              className="px-btn"
             >
               Try Again
             </button>
@@ -51,3 +51,4 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return this.props.children;
   }
 }
+

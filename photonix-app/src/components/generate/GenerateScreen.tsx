@@ -11,34 +11,41 @@ export function GenerateScreen() {
   const selectedId = useGenerateStore((s) => s.selectedId);
   const images = useGenerateStore((s) => s.images);
 
-  // Load generated images on mount
   useEffect(() => {
     if (!isTauri()) return;
     listGeneratedImages()
-      .then((imgs) => {
-        setImages(imgs);
-      })
+      .then((imgs) => setImages(imgs))
       .catch((err) => console.error("Failed to load generations:", err));
   }, []);
 
   const selected = images.find((img) => img.id === selectedId);
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" style={{ background: "var(--bg)" }}>
       {/* Left: Gallery + Preview */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Preview area */}
-        <div className="flex-1 overflow-hidden border-b border-neutral-800 bg-neutral-950">
+        <div
+          className="flex-1 overflow-hidden"
+          style={{
+            background: "var(--bg)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
           <GeneratePreview image={selected ?? null} />
         </div>
-        {/* Gallery strip */}
         <div className="h-44 shrink-0 overflow-hidden">
           <GenerateGallery />
         </div>
       </div>
 
       {/* Right: Prompt panel */}
-      <aside className="flex w-80 shrink-0 flex-col border-l border-neutral-800 bg-neutral-900">
+      <aside
+        className="flex w-80 shrink-0 flex-col"
+        style={{
+          background: "var(--surface)",
+          borderLeft: "1px solid var(--border)",
+        }}
+      >
         <GeneratePromptPanel />
       </aside>
     </div>

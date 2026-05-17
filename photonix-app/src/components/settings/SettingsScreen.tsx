@@ -159,18 +159,26 @@ export function SettingsScreen() {
   }
 
   return (
-    <div className="flex h-full">
-      <nav className="w-44 border-r border-neutral-800 p-3">
+    <div className="flex h-full" style={{ background: "var(--bg)" }}>
+      <nav
+        className="w-44 p-3"
+        style={{
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+        }}
+      >
         <ul className="flex flex-col gap-1">
           {CATEGORY_KEYS.map((cat) => (
             <li key={cat.id}>
               <button
                 onClick={() => setCategory(cat.id)}
-                className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
-                  category === cat.id
-                    ? "bg-neutral-800 text-neutral-200"
-                    : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-                }`}
+                className="w-full rounded px-2 py-1 text-left text-xs transition-colors"
+                style={{
+                  background:
+                    category === cat.id ? "var(--accent-soft)" : "transparent",
+                  color:
+                    category === cat.id ? "var(--accent-strong)" : "var(--muted)",
+                }}
               >
                 {t(cat.tKey)}
               </button>
@@ -179,7 +187,7 @@ export function SettingsScreen() {
         </ul>
       </nav>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6" style={{ background: "var(--bg)" }}>
         {category === "provider" && (
           <ProviderSection
             apiKeyDraft={apiKeyDraft}
@@ -233,7 +241,7 @@ function ProviderSection({
 
   return (
     <div className="flex max-w-md flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">
+      <h2 className="text-sm font-medium ">
         {t("settings.provider.heading")}
       </h2>
 
@@ -246,7 +254,7 @@ function ProviderSection({
 
       {/* API key — local-only field */}
       <div>
-        <label className="mb-1 flex items-center justify-between text-[11px] text-neutral-400">
+        <label className="mb-1 flex items-center justify-between text-[11px] ">
           <span>{t("settings.provider.apiKey")}</span>
           {hasKey && (
             <span className="text-[10px] text-green-400">
@@ -265,20 +273,20 @@ function ProviderSection({
           }
           autoComplete="off"
           spellCheck={false}
-          className="w-full rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-neutral-600"
+          className="px-input"
         />
         {hasKey && (
           <button
             onClick={onClearKey}
-            className="mt-1 text-[10px] text-neutral-500 hover:text-red-400"
+            className="mt-1 text-[10px]  "
           >
             {t("settings.provider.clearKey")}
           </button>
         )}
       </div>
 
-      <div className="border-t border-neutral-800 pt-4">
-        <h3 className="mb-3 text-xs font-medium text-neutral-300">
+      <div className="border-t  pt-4">
+        <h3 className="mb-3 text-xs font-medium ">
           {t("settings.provider.modelsHeading")}
         </h3>
       </div>
@@ -305,7 +313,7 @@ function ProviderSection({
           onChange={(v) => setProvider({ visionModel: v })}
           placeholder={t("settings.provider.visionModelPlaceholder")}
         />
-        <p className="mt-1 text-[10px] text-neutral-600">
+        <p className="mt-1 text-[10px] ">
           {t("settings.provider.visionModelHelp")}
         </p>
       </div>
@@ -320,7 +328,7 @@ function ProviderSection({
         <button
           onClick={onValidate}
           disabled={validating || (!hasKey && !apiKeyDraft)}
-          className="rounded bg-neutral-700 px-4 py-1.5 text-xs font-medium text-neutral-200 hover:bg-neutral-600 transition-colors disabled:opacity-40"
+          className="px-btn"
         >
           {validating ? t("settings.provider.validating") : t("settings.provider.validate")}
         </button>
@@ -347,7 +355,7 @@ function ProviderSection({
         </div>
       )}
 
-      <p className="text-[10px] text-neutral-600 mt-2">
+      <p className="text-[10px]  mt-2">
         {t("settings.provider.keyHelp")}
       </p>
     </div>
@@ -361,12 +369,12 @@ function EditingSection({ saved, onSave }: { saved: boolean; onSave: () => void 
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">
+      <h2 className="text-sm font-medium ">
         {t("settings.editing.heading")}
       </h2>
-      <p className="text-[11px] text-neutral-500">{t("settings.editing.proxyHelp")}</p>
+      <p className="text-[11px] ">{t("settings.editing.proxyHelp")}</p>
 
-      <label className="block text-[11px] text-neutral-400">
+      <label className="block text-[11px] ">
         {t("settings.editing.proxyProfileLabel")}
       </label>
       <div className="flex flex-col gap-1">
@@ -377,16 +385,16 @@ function EditingSection({ saved, onSave }: { saved: boolean; onSave: () => void 
             className={`rounded px-3 py-2 text-left text-xs transition-colors ${
               uploadProxyProfile === p.id
                 ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                : "  hover:"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="font-medium">{p.label}</span>
-              <span className="text-[10px] text-neutral-500">
+              <span className="text-[10px] ">
                 {p.longEdge}px · ≤{Math.round(p.maxBytes / (1024 * 1024))}MB
               </span>
             </div>
-            <div className="mt-0.5 text-[10px] text-neutral-500">{p.description}</div>
+            <div className="mt-0.5 text-[10px] ">{p.description}</div>
           </button>
         ))}
       </div>
@@ -408,12 +416,12 @@ function ExportSection({ saved, onSave }: { saved: boolean; onSave: () => void }
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">
+      <h2 className="text-sm font-medium ">
         {t("settings.export.heading")}
       </h2>
-      <p className="text-[11px] text-neutral-500">{t("settings.export.help")}</p>
+      <p className="text-[11px] ">{t("settings.export.help")}</p>
 
-      <label className="block text-[11px] text-neutral-400">
+      <label className="block text-[11px] ">
         {t("settings.export.defaultPresetLabel")}
       </label>
       <div className="flex flex-col gap-1">
@@ -424,11 +432,11 @@ function ExportSection({ saved, onSave }: { saved: boolean; onSave: () => void }
             className={`rounded px-3 py-2 text-left text-xs transition-colors ${
               defaultExportPreset === p.id
                 ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                : "  hover:"
             }`}
           >
             <div className="font-medium">{p.label}</div>
-            <div className="mt-0.5 text-[10px] text-neutral-500">{p.description}</div>
+            <div className="mt-0.5 text-[10px] ">{p.description}</div>
           </button>
         ))}
       </div>
@@ -469,12 +477,12 @@ function LanguageSection() {
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">
+      <h2 className="text-sm font-medium ">
         {t("settings.language.heading")}
       </h2>
-      <p className="text-[11px] text-neutral-500">{t("settings.language.help")}</p>
+      <p className="text-[11px] ">{t("settings.language.help")}</p>
 
-      <label className="block text-[11px] text-neutral-400">
+      <label className="block text-[11px] ">
         {t("settings.language.label")}
       </label>
       <div className="flex flex-col gap-1">
@@ -485,7 +493,7 @@ function LanguageSection() {
             className={`rounded px-3 py-2 text-left text-xs transition-colors ${
               language === opt.id
                 ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                : "  hover:"
             }`}
           >
             {t(opt.labelKey)}
@@ -496,7 +504,7 @@ function LanguageSection() {
       {savedToast && (
         <p className="text-[11px] text-green-400">{t("common.saved")}</p>
       )}
-      <p className="text-[10px] text-neutral-600">
+      <p className="text-[10px] ">
         {t("settings.language.restartHint")}
       </p>
     </div>
@@ -518,14 +526,15 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[11px] text-neutral-400">{label}</label>
+      <label className="mb-1 block text-[11px] ">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-neutral-600"
+        className="px-input"
       />
     </div>
   );
 }
+
