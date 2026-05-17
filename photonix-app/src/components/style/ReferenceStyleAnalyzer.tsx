@@ -100,7 +100,7 @@ export function ReferenceStyleAnalyzer({
       <div className="flex items-center gap-2">
         <button
           onClick={pickImage}
-          className="rounded  px-3 py-1.5 text-xs  hover:"
+          className="px-btn"
         >
           {imagePath ? t("style.analyzer.changeImage") : t("style.analyzer.pickImage")}
         </button>
@@ -131,7 +131,7 @@ export function ReferenceStyleAnalyzer({
       <button
         onClick={runAnalysis}
         disabled={!imagePath || analyzing || !hasApiKey}
-        className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40"
+        className="px-btn px-btn-primary"
       >
         {analyzing ? t("style.analyzer.analyzing") : t("style.analyzer.analyze")}
       </button>

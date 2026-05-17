@@ -15,9 +15,7 @@ export function MaskPanel() {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[10px]" style={{ color: "var(--muted)" }}>
-        {t("editor.mask.brushSize") !== "editor.mask.brushSize"
-          ? "Paint on the image to select the region you want to edit."
-          : "Paint on the image to select the region you want to edit."}
+        {t("editor.mask.hint")}
       </p>
 
       {/* Mode toggle */}
@@ -97,7 +95,7 @@ export function MaskPanel() {
         style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
       >
         <p className="text-[10px]" style={{ color: "var(--muted)" }}>
-          <strong style={{ color: "var(--fg)" }}>Tips:</strong>
+          <strong style={{ color: "var(--fg)" }}>{t("editor.mask.tipsHeading")}</strong>
           <br />• Left click to paint mask
           <br />• Alt + drag to pan
           <br />• Scroll to zoom

@@ -38,17 +38,14 @@ export function StyleList({
               <button
                 key={style.id}
                 onClick={() => onSelect(style.id)}
-                className={`flex w-full items-start gap-2 rounded px-2 py-1.5 text-left transition-colors ${
-                  selectedId === style.id
-                    ? ""
-                    : "hover:"
-                }`}
+                className="flex w-full items-start gap-2 rounded px-2 py-1.5 text-left transition-colors"
+                style={{ background: selectedId === style.id ? "var(--accent-soft)" : "transparent" }}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-1">
                     <span className="text-[12px] ">{style.name}</span>
                     {defaultStyleId === style.id && (
-                      <span className="rounded bg-blue-600/40 px-1 py-0 text-[8px] font-medium text-blue-200">
+                      <span style={{ background: "var(--accent-soft)", color: "var(--accent-strong)", padding: "0 4px", borderRadius: 4, fontSize: 8, fontWeight: 500 }}>
                         {t("style.defaultBadge")}
                       </span>
                     )}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/i18n";
 
 interface CanvasProps {
   imageSrc: string | null;
@@ -18,6 +19,7 @@ export function Canvas({
   existingMaskDataUrl,
   onMaskChange,
 }: CanvasProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -180,13 +182,13 @@ export function Canvas({
               onClick={handleClearMask}
               className="rounded bg-neutral-800/80 px-2 py-0.5 text-[10px] text-neutral-300 backdrop-blur hover:bg-neutral-700"
             >
-              Clear Mask
+              {t("editor.mask.clearMask")}
             </button>
             <button
               onClick={handleInvertMask}
               className="rounded bg-neutral-800/80 px-2 py-0.5 text-[10px] text-neutral-300 backdrop-blur hover:bg-neutral-700"
             >
-              Invert
+              {t("editor.canvas.invert")}
             </button>
           </>
         )}
@@ -194,7 +196,7 @@ export function Canvas({
           onClick={handleFit}
           className="rounded bg-neutral-800/80 px-2 py-0.5 text-[10px] text-neutral-300 backdrop-blur hover:bg-neutral-700"
         >
-          Fit
+          {t("editor.canvas.fit")}
         </button>
         <span className="rounded bg-neutral-800/80 px-2 py-0.5 text-[10px] text-neutral-400 backdrop-blur">
           {Math.round(zoom * 100)}%
@@ -241,7 +243,7 @@ export function Canvas({
             </div>
           ) : (
             <div className="flex h-64 w-96 items-center justify-center rounded border border-dashed border-neutral-700 text-neutral-600">
-              <span className="text-sm">No image loaded</span>
+              <span className="text-sm">{t("editor.canvas.noImage")}</span>
             </div>
           )}
         </div>

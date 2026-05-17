@@ -231,6 +231,13 @@ export interface TranslationDictionary {
       eraseMode: string;
       clearMask: string;
       showOverlay: string;
+      hint: string;
+      tipsHeading: string;
+    };
+    canvas: {
+      invert: string;
+      fit: string;
+      noImage: string;
     };
   };
 

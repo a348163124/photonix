@@ -215,6 +215,13 @@ const zhCN: TranslationDictionary = {
       eraseMode: "擦除",
       clearMask: "清除蒙版",
       showOverlay: "显示叠加",
+      hint: "在图片上涂抹以选择要编辑的区域。",
+      tipsHeading: "提示:",
+    },
+    canvas: {
+      invert: "反转",
+      fit: "适应",
+      noImage: "未加载图片",
     },
   },
 

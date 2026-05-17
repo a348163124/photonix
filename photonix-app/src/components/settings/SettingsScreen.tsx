@@ -321,7 +321,7 @@ function ProviderSection({
       <div className="flex items-center gap-2 pt-2">
         <button
           onClick={onSave}
-          className="rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+          className="px-btn px-btn-primary"
         >
           {saved ? t("common.saved") : t("common.save")}
         </button>
@@ -336,19 +336,20 @@ function ProviderSection({
 
       {validationResult && (
         <p
-          className={`text-xs ${
+          className="text-xs"
+          style={
             validationResult === t("settings.provider.connectionSuccess")
-              ? "text-green-400"
-              : "text-red-400"
-          }`}
+              ? { color: "var(--accent-strong)" }
+              : { color: "var(--danger)" }
+          }
         >
           {validationResult}
         </p>
       )}
       {validationWarnings.length > 0 && (
-        <div className="rounded bg-amber-900/20 p-2">
+        <div style={{ background: "oklch(95% 0.05 70)", borderRadius: "var(--radius-sm)", padding: 8 }}>
           {validationWarnings.map((w, i) => (
-            <p key={i} className="text-[10px] text-amber-400">
+            <p key={i} style={{ color: "oklch(45% 0.16 70)", fontSize: 10 }}>
               {w}
             </p>
           ))}
@@ -382,11 +383,12 @@ function EditingSection({ saved, onSave }: { saved: boolean; onSave: () => void 
           <button
             key={p.id}
             onClick={() => setUploadProxyProfile(p.id)}
-            className={`rounded px-3 py-2 text-left text-xs transition-colors ${
+            className={`rounded px-3 py-2 text-left text-xs transition-colors`}
+            style={
               uploadProxyProfile === p.id
-                ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                : "  hover:"
-            }`}
+                ? { background: "var(--accent-soft)", borderColor: "var(--accent)", color: "var(--accent-strong)" }
+                : {}
+            }
           >
             <div className="flex items-center justify-between">
               <span className="font-medium">{p.label}</span>
@@ -401,7 +403,7 @@ function EditingSection({ saved, onSave }: { saved: boolean; onSave: () => void 
 
       <button
         onClick={onSave}
-        className="mt-2 w-fit rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+        className="mt-2 w-fit px-btn px-btn-primary"
       >
         {saved ? t("common.saved") : t("common.save")}
       </button>
@@ -429,11 +431,12 @@ function ExportSection({ saved, onSave }: { saved: boolean; onSave: () => void }
           <button
             key={p.id}
             onClick={() => setDefaultExportPreset(p.id)}
-            className={`rounded px-3 py-2 text-left text-xs transition-colors ${
+            className={`rounded px-3 py-2 text-left text-xs transition-colors`}
+            style={
               defaultExportPreset === p.id
-                ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                : "  hover:"
-            }`}
+                ? { background: "var(--accent-soft)", borderColor: "var(--accent)", color: "var(--accent-strong)" }
+                : {}
+            }
           >
             <div className="font-medium">{p.label}</div>
             <div className="mt-0.5 text-[10px] ">{p.description}</div>
@@ -443,7 +446,7 @@ function ExportSection({ saved, onSave }: { saved: boolean; onSave: () => void }
 
       <button
         onClick={onSave}
-        className="mt-2 w-fit rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+        className="mt-2 w-fit px-btn px-btn-primary"
       >
         {saved ? t("common.saved") : t("common.save")}
       </button>
@@ -490,11 +493,12 @@ function LanguageSection() {
           <button
             key={opt.id}
             onClick={() => pickLanguage(opt.id)}
-            className={`rounded px-3 py-2 text-left text-xs transition-colors ${
+            className={`rounded px-3 py-2 text-left text-xs transition-colors`}
+            style={
               language === opt.id
-                ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
-                : "  hover:"
-            }`}
+                ? { background: "var(--accent-soft)", borderColor: "var(--accent)", color: "var(--accent-strong)" }
+                : {}
+            }
           >
             {t(opt.labelKey)}
           </button>
@@ -502,7 +506,7 @@ function LanguageSection() {
       </div>
 
       {savedToast && (
-        <p className="text-[11px] text-green-400">{t("common.saved")}</p>
+        <p className="text-[11px]" style={{ color: "var(--accent-strong)" }}>{t("common.saved")}</p>
       )}
       <p className="text-[10px] ">
         {t("settings.language.restartHint")}

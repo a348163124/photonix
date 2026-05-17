@@ -220,6 +220,13 @@ const en: TranslationDictionary = {
       eraseMode: "Erase",
       clearMask: "Clear mask",
       showOverlay: "Show overlay",
+      hint: "Paint on the image to select the region you want to edit.",
+      tipsHeading: "Tips:",
+    },
+    canvas: {
+      invert: "Invert",
+      fit: "Fit",
+      noImage: "No image loaded",
     },
   },
 
