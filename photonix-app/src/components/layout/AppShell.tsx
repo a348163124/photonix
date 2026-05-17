@@ -14,10 +14,13 @@ export function AppShell() {
   const currentView = useAppStore((s) => s.currentView);
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-950 text-neutral-100">
-      <TopBar />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div
+      className="flex h-screen w-screen overflow-hidden"
+      style={{ background: "var(--bg)", color: "var(--fg)" }}
+    >
+      <Sidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar />
         <main className="flex-1 overflow-hidden">
           <ErrorBoundary>
             {currentView === "generate" && <GenerateScreen />}
@@ -28,8 +31,8 @@ export function AppShell() {
             {currentView === "settings" && <SettingsScreen />}
           </ErrorBoundary>
         </main>
+        <StatusBar />
       </div>
-      <StatusBar />
     </div>
   );
 }

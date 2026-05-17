@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 — AI 图像编辑器</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.005 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(22% 0.02 240);
+      --muted: oklch(50% 0.018 240);
+      --border: oklch(90% 0.008 240);
+      --accent: oklch(58% 0.16 145);
+      --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--fg); min-height: 100vh; display: flex; }
+    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; }
+    .logo { font-family: var(--font-display); font-weight: 600; font-size: 18px; margin-bottom: 32px; display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 28px; height: 28px; background: var(--accent); border-radius: 6px; }
+    .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .nav-item { padding: 10px 12px; border-radius: 8px; text-decoration: none; color: var(--fg); display: flex; align-items: center; gap: 10px; font-size: 14px; transition: background 0.15s; }
+    .nav-item:hover { background: var(--border); }
+    .nav-item.active { background: var(--fg); color: var(--surface); }
+    .nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .main { flex: 1; display: flex; flex-direction: column; }
+    .header { padding: 16px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .header h1 { font-size: 18px; font-weight: 600; }
+    .content { flex: 1; padding: 24px; max-width: 720px; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; }
+    .section-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 15px; }
+    .section-content { padding: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+    .form-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .form-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--font-body); background: var(--bg); }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+    .form-input.mono { font-family: var(--font-mono); font-size: 13px; }
+    .form-select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--font-body); background: var(--bg); cursor: pointer; }
+    .form-row { display: flex; gap: 16px; }
+    .form-row .form-group { flex: 1; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--bg); border: 1px solid var(--border); }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+    .status-badge.success { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+    .status-badge.error { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-badge.success .status-dot { background: #16a34a; }
+    .status-badge.error .status-dot { background: #dc2626; }
+    .api-status { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg); border-radius: 8px; margin-bottom: 16px; }
+    .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .toggle-group:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; }
+    .toggle-hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .toggle { width: 44px; height: 24px; background: var(--border); border-radius: 12px; cursor: pointer; position: relative; transition: background 0.15s; }
+    .toggle.active { background: var(--accent); }
+    .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.15s; }
+    .toggle.active::after { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon"></div>AI 图像编辑器</div>
+    <nav class="nav">
+      <a href="library.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        图库
+      </a>
+      <a href="editor.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+        编辑器
+      </a>
+      <a href="generate.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+        生成
+      </a>
+      <a href="style.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        我的风格
+      </a>
+      <a href="prompts.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        提示词中心
+      </a>
+      <a href="settings.html" class="nav-item active" style="margin-top: auto;">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        设置
+      </a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="header"><h1>Settings</h1></div>
+    <div class="content">
+      <div class="section">
+        <div class="section-header">API Configuration</div>
+        <div class="section-content">
+          <div class="api-status">
+            <span class="status-badge success"><span class="status-dot"></span>Connected</span>
+            <span style="font-size: 12px; color: var(--muted); font-family: var(--font-mono);">Balance: $47.50</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">OpenAI API Key</label>
+            <input type="password" class="form-input mono" value="sk-••••••••••••••••••••" placeholder="sk-...">
+            <p class="form-hint">Your API key is stored locally and encrypted</p>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Default Model</label>
+              <select class="form-select">
+                <option>GPT-4 Vision</option>
+                <option>GPT-4 Turbo</option>
+                <option>GPT-3.5 Turbo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Image Model</label>
+              <select class="form-select">
+                <option>DALL·E 3</option>
+                <option>DALL·E 2</option>
+                <option>Stable Diffusion XL</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header">Editor Preferences</div>
+        <div class="section-content">
+          <div class="toggle-group">
+            <div><div class="toggle-label">Auto-save changes</div><div class="toggle-hint">Save your work every 30 seconds</div></div>
+            <div class="toggle active"></div>
+          </div>
+          <div class="toggle-group">
+            <div><div class="toggle-label">Show grid overlay</div><div class="toggle-hint">Display alignment grid on canvas</div></div>
+            <div class="toggle"></div>
+          </div>
+          <div class="toggle-group">
+            <div><div class="toggle-label">Hardware acceleration</div><div class="toggle-hint">Use GPU for faster rendering</div></div>
+            <div class="toggle active"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header">Storage</div>
+        <div class="section-content">
+          <div class="form-group">
+            <label class="form-label">Default Export Location</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" class="form-input mono" value="~/Pictures/X-Image-Editor/exports" readonly>
+              <button class="btn btn-secondary">Browse...</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Default Format</label>
+              <select class="form-select">
+                <option>PNG (Lossless)</option>
+                <option>JPEG (Smaller size)</option>
+                <option>WebP (Modern)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quality</label>
+              <select class="form-select">
+                <option>Maximum</option>
+                <option>High</option>
+                <option>Medium</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary">Save Changes</button>
+    </div>
+  </main>
+</body>
+</html>

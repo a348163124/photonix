@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提示词中心 - AI Image Editor</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.005 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(22% 0.02 240);
+      --muted: oklch(50% 0.018 240);
+      --border: oklch(90% 0.008 240);
+      --accent: oklch(58% 0.16 145);
+      --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--fg);
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+    }
+    .logo {
+      font-weight: 600;
+      font-size: 14px;
+      padding: 12px;
+      margin-bottom: 8px;
+      color: var(--fg);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .nav-item:hover { background: var(--border); color: var(--fg); }
+    .nav-item.active { background: var(--accent); color: white; }
+    .nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .main { margin-left: 220px; flex: 1; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { font-size: 24px; font-weight: 600; }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--border);
+      padding: 4px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      width: fit-content;
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+    }
+    .tab.active { background: var(--surface); color: var(--fg); }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .search-box input {
+      border: none;
+      background: transparent;
+      flex: 1;
+      font-size: 13px;
+      outline: none;
+    }
+    .category-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .category-chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .category-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .prompts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .prompt-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .prompt-card:hover { border-color: var(--accent); }
+    .prompt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .prompt-title { font-weight: 500; font-size: 14px; }
+    .prompt-tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--muted);
+    }
+    .prompt-text {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .prompt-footer { display: flex; justify-content: space-between; align-items: center; }
+    .prompt-usage { font-size: 11px; color: var(--muted); }
+    .prompt-actions { display: flex; gap: 8px; }
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+    }
+    .action-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    .section-title { font-weight: 600; font-size: 16px; margin: 24px 0 12px; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">AI Image Editor</div>
+    <a href="library.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      图库
+    </a>
+    <a href="editor.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+      编辑器
+    </a>
+    <a href="generate.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+      生成
+    </a>
+    <a href="style.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      我的风格
+    </a>
+    <a href="prompts.html" class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      提示词中心
+    </a>
+    <div style="margin-top: auto;">
+      <a href="settings.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        设置
+      </a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="header">
+      <h1>提示词中心</h1>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active">精选提示词</button>
+      <button class="tab">我的收藏</button>
+      <button class="tab">历史记录</button>
+    </div>
+
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" placeholder="搜索提示词...">
+    </div>
+
+    <div class="category-row">
+      <span class="category-chip active">全部</span>
+      <span class="category-chip">人像</span>
+      <span class="category-chip">风景</span>
+      <span class="category-chip">产品</span>
+      <span class="category-chip">艺术</span>
+      <span class="category-chip">建筑</span>
+      <span class="category-chip">美食</span>
+    </div>
+
+    <div class="section-title">热门推荐</div>
+    <div class="prompts-grid">
+      <div class="prompt-card">
+        <div class="prompt-header">
+          <div class="prompt-title">专业人像光效</div>
+          <span class="prompt-tag">人像</span>
+        </div>
+        <div class="prompt-text">Studio lighting, soft key light from 45 degrees, fill light, professional portrait, shallow depth of field, bokeh background, high-end photography</div>
+        <div class="prompt-footer">
+          <span class="prompt-usage">使用 1.2k 次</span>
+          <div class="prompt-actions">
+            <button class="action-btn">收藏</button>
+            <button class="action-btn primary">使用</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-header">
+          <div class="prompt-title">日落氛围</div>
+          <span class="prompt-tag">风景</span>
+        </div>
+        <div class="prompt-text">Golden hour lighting, warm tones, dramatic sky, sun rays through clouds, cinematic atmosphere, professional landscape photography</div>
+        <div class="prompt-footer">
+          <span class="prompt-usage">使用 856 次</span>
+          <div class="prompt-actions">
+            <button class="action-btn">收藏</button>
+            <button class="action-btn primary">使用</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-header">
+          <div class="prompt-title">产品白底</div>
+          <span class="prompt-tag">产品</span>
+        </div>
+        <div class="prompt-text">Pure white background, studio product photography, soft even lighting, sharp focus, clean commercial style, e-commerce ready</div>
+        <div class="prompt-footer">
+          <span class="prompt-usage">使用 2.1k 次</span>
+          <div class="prompt-actions">
+            <button class="action-btn">收藏</button>
+            <button class="action-btn primary">使用</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-header">
+          <div class="prompt-title">电影感调色</div>
+          <span class="prompt-tag">艺术</span>
+        </div>
+        <div class="prompt-text">Cinematic color grading, teal and orange, film grain, anamorphic lens flare, Hollywood style, dramatic mood, 24fps film look</div>
+        <div class="prompt-footer">
+          <span class="prompt-usage">使用 678 次</span>
+          <div class="prompt-actions">
+            <button class="action-btn">收藏</button>
+            <button class="action-btn primary">使用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">最近使用</div>
+    <div class="prompts-grid">
+      <div class="prompt-card">
+        <div class="prompt-header">
+          <div class="prompt-title">我的自定义风格</div>
+          <span class="prompt-tag">自定义</span>
+        </div>
+        <div class="prompt-text">Soft natural light, pastel colors, dreamy atmosphere, gentle shadows, minimal retouching, authentic feel</div>
+        <div class="prompt-footer">
+          <span class="prompt-usage">上次使用: 2小时前</span>
+          <div class="prompt-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn primary">使用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

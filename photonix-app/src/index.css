@@ -1,1 +1,366 @@
 @import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * MVP5: Open Design tokens (extracted from photonix设计.zip / index.html).
+ *
+ * The design handoff uses OKLCH for perceptually uniform colors and an
+ * accent-first palette: pale neutral background, white surface, dark
+ * foreground, muted gray secondary text, and a green accent. We map these
+ * to CSS variables so the whole app inherits a single visual system.
+ * ────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: oklch(98% 0.005 250);
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(96% 0.005 250);
+  --fg: oklch(22% 0.02 240);
+  --muted: oklch(50% 0.018 240);
+  --muted-2: oklch(70% 0.012 240);
+  --border: oklch(90% 0.008 240);
+  --border-strong: oklch(82% 0.012 240);
+  --accent: oklch(58% 0.16 145);
+  --accent-strong: oklch(50% 0.17 145);
+  --accent-soft: oklch(94% 0.04 145);
+  --danger: oklch(58% 0.18 25);
+  --warning: oklch(72% 0.14 70);
+  --info: oklch(60% 0.12 240);
+
+  /* Typography */
+  --font-display: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* Radii + spacing rhythm */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Compact rhythm — 12 / 16 / 20 / 24 px steps as in the export */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 4%);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 8%);
+  --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 12%);
+
+  /* Motion */
+  --motion-fast: 0.12s ease-out;
+  --motion-base: 0.18s ease-out;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ── Reusable surface primitives ────────────────────────────────────────── */
+
+.px-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.px-surface-strong {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.px-divider {
+  border-color: var(--border);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+
+.px-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--motion-fast), border-color var(--motion-fast),
+    color var(--motion-fast);
+}
+.px-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.px-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.px-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.px-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: oklch(99% 0 0);
+}
+.px-btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+
+.px-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.px-btn-ghost:hover { background: var(--surface-2); }
+
+.px-btn-danger {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--danger);
+}
+.px-btn-danger:hover {
+  background: oklch(96% 0.04 25);
+  border-color: var(--danger);
+}
+
+/* ── Form inputs ───────────────────────────────────────────────────────── */
+
+.px-input,
+.px-textarea,
+.px-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast);
+}
+.px-input::placeholder,
+.px-textarea::placeholder { color: var(--muted-2); }
+.px-input:focus,
+.px-textarea:focus,
+.px-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px oklch(94% 0.06 145);
+}
+.px-input:disabled,
+.px-textarea:disabled,
+.px-select:disabled { opacity: 0.6; cursor: not-allowed; }
+.px-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+/* ── Chips ─────────────────────────────────────────────────────────────── */
+
+.px-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+.px-chip:hover { color: var(--fg); border-color: var(--border-strong); }
+.px-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: oklch(99% 0 0);
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+
+.px-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast),
+    transform var(--motion-fast);
+}
+.px-card:hover {
+  border-color: var(--accent);
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.px-tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--border);
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
+.px-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+.px-tab:hover { color: var(--fg); }
+.px-tab.active { background: var(--surface); color: var(--fg); box-shadow: var(--shadow-sm); }
+
+/* ── Sidebar nav ───────────────────────────────────────────────────────── */
+
+.px-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast);
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.px-nav-item:hover { background: var(--border); color: var(--fg); }
+.px-nav-item.active { background: var(--accent); color: oklch(99% 0 0); }
+.px-nav-item.active svg { opacity: 1; }
+.px-nav-item svg { opacity: 0.7; flex-shrink: 0; }
+
+/* ── Scrollbar polish ──────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-2); }
+
+/* ── Utility helpers ───────────────────────────────────────────────────── */
+
+.px-muted { color: var(--muted); }
+.px-muted-2 { color: var(--muted-2); }
+.px-fg { color: var(--fg); }
+.px-bg { background: var(--bg); }
+.px-surface-bg { background: var(--surface); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * MVP5 visual migration — legacy Tailwind dark classes get remapped to the
+ * Open Design tokens. This lets the older screens (Library, Editor, Style,
+ * Settings) inherit the new light shell without touching every JSX file.
+ *
+ * The mapping is intentionally narrow: only colors used in the existing
+ * screens are remapped. Functional Tailwind classes (layout, spacing,
+ * typography sizes) are preserved as-is.
+ * ────────────────────────────────────────────────────────────────────── */
+
+.bg-neutral-950 { background: var(--bg) !important; }
+.bg-neutral-900,
+.bg-neutral-900\/40,
+.bg-neutral-900\/50 { background: var(--surface) !important; }
+.bg-neutral-800,
+.bg-neutral-800\/50,
+.bg-neutral-800\/60 { background: var(--bg) !important; }
+.bg-neutral-700 { background: var(--surface-2) !important; }
+.bg-neutral-800\/40 { background: var(--surface-2) !important; }
+
+.text-neutral-100,
+.text-neutral-200,
+.text-neutral-300 { color: var(--fg) !important; }
+.text-neutral-400 { color: var(--muted) !important; }
+.text-neutral-500,
+.text-neutral-600 { color: var(--muted-2) !important; }
+.text-white { color: oklch(99% 0 0) !important; }
+
+.border-neutral-700,
+.border-neutral-800 { border-color: var(--border) !important; }
+
+/* Hover states — keep the rhythm from the design system. */
+.hover\:bg-neutral-700:hover,
+.hover\:bg-neutral-800:hover { background: var(--surface-2) !important; }
+.hover\:text-neutral-200:hover,
+.hover\:text-neutral-300:hover { color: var(--fg) !important; }
+
+/* Accent buttons. The previous palette used Tailwind's blue-600 family; the
+   Open Design system uses a green accent. Remap so existing CTA buttons
+   pick up the new color automatically. */
+.bg-blue-600,
+.bg-blue-500 { background: var(--accent) !important; color: oklch(99% 0 0) !important; }
+.hover\:bg-blue-500:hover,
+.hover\:bg-blue-600:hover { background: var(--accent-strong) !important; }
+.text-blue-200,
+.text-blue-300,
+.text-blue-400 { color: var(--accent) !important; }
+.bg-blue-600\/30,
+.bg-blue-600\/40,
+.bg-blue-700\/40 { background: var(--accent-soft) !important; color: var(--accent-strong) !important; }
+.ring-blue-500\/50 { --tw-ring-color: var(--accent) !important; }
+
+/* Green action buttons (single-export, batch export confirm) — same accent. */
+.bg-green-600,
+.bg-green-500 { background: var(--accent) !important; color: oklch(99% 0 0) !important; }
+.hover\:bg-green-500:hover { background: var(--accent-strong) !important; }
+.bg-green-700\/40,
+.bg-green-700 { background: var(--accent-soft) !important; color: var(--accent-strong) !important; }
+.text-green-400,
+.text-green-200,
+.text-green-500 { color: var(--accent-strong) !important; }
+
+/* Status colors. */
+.bg-amber-700,
+.bg-amber-700\/60,
+.bg-amber-900\/20 { background: oklch(95% 0.05 70) !important; color: oklch(40% 0.13 70) !important; }
+.text-amber-200,
+.text-amber-300\/80,
+.text-amber-400 { color: oklch(45% 0.16 70) !important; }
+.bg-red-700,
+.bg-red-700\/60 { background: oklch(96% 0.04 25) !important; color: var(--danger) !important; }
+.text-red-100,
+.text-red-400 { color: var(--danger) !important; }
+.bg-purple-600,
+.hover\:bg-purple-500:hover { background: oklch(60% 0.18 290) !important; color: oklch(99% 0 0) !important; }
+
+/* Inputs that don't yet use .px-input */
+input[type="text"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="email"],
+textarea,
+select {
+  background: var(--surface);
+  color: var(--fg);
+}
+input::placeholder,
+textarea::placeholder { color: var(--muted-2); }
+.placeholder-neutral-500::placeholder,
+.placeholder-neutral-600::placeholder { color: var(--muted-2) !important; }
+
+/* Range / color inputs keep system styling, just bump accents. */
+input[type="range"] { accent-color: var(--accent); }
+input[type="checkbox"] { accent-color: var(--accent); }
+.accent-blue-500 { accent-color: var(--accent) !important; }
+
+/* Animated spinner for sync button / loaders */
+@keyframes pxSpin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.animate-spin { animation: pxSpin 1s linear infinite; }

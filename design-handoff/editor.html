@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor — X Image Editor</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.005 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(22% 0.02 240);
+      --muted: oklch(50% 0.018 240);
+      --border: oklch(90% 0.008 240);
+      --accent: oklch(58% 0.16 145);
+      --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--fg); min-height: 100vh; display: flex; }
+    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; }
+    .logo { font-family: var(--font-display); font-weight: 600; font-size: 18px; margin-bottom: 32px; display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 28px; height: 28px; background: var(--accent); border-radius: 6px; }
+    .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .nav-item { padding: 10px 12px; border-radius: 8px; text-decoration: none; color: var(--fg); display: flex; align-items: center; gap: 10px; font-size: 14px; transition: background 0.15s; }
+    .nav-item:hover { background: var(--border); }
+    .nav-item.active { background: var(--fg); color: var(--surface); }
+    .nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .main { flex: 1; display: flex; flex-direction: column; }
+    .toolbar { padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .tool-group { display: flex; gap: 4px; padding-right: 12px; border-right: 1px solid var(--border); margin-right: 12px; }
+    .tool { width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--fg); transition: all 0.15s; }
+    .tool:hover { background: var(--border); }
+    .tool.active { background: var(--accent); color: white; }
+    .tool svg { width: 18px; height: 18px; }
+    .canvas-area { flex: 1; display: flex; background: #1a1a1a; overflow: hidden; }
+    .canvas { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+    .canvas-img { max-width: 100%; max-height: 100%; border-radius: 4px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .panel { width: 320px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+    .panel-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 14px; }
+    .panel-content { flex: 1; padding: 16px; overflow-y: auto; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .slider-group { margin-bottom: 16px; }
+    .slider-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+    .slider-label span:last-child { font-family: var(--font-mono); color: var(--muted); }
+    input[type="range"] { width: 100%; height: 4px; border-radius: 2px; background: var(--border); -webkit-appearance: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+    .prompt-area { width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--font-body); resize: vertical; background: var(--bg); }
+    .prompt-area:focus { outline: none; border-color: var(--accent); }
+    .btn { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 12px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--bg); border: 1px solid var(--border); margin-top: 8px; }
+    .mask-indicator { padding: 8px 12px; background: rgba(88, 100, 145, 0.1); border-radius: 8px; font-size: 13px; color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .mask-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon"></div>AI 图像编辑器</div>
+    <nav class="nav">
+      <a href="library.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        图库
+      </a>
+      <a href="editor.html" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+        编辑器
+      </a>
+      <a href="generate.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+        生成
+      </a>
+      <a href="style.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        我的风格
+      </a>
+      <a href="prompts.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        提示词中心
+      </a>
+      <a href="settings.html" class="nav-item" style="margin-top: auto;">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        设置
+      </a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="toolbar">
+      <div class="tool-group">
+        <button class="tool active" title="Brush"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></button>
+        <button class="tool" title="Eraser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.2 2c.8-.8 2-.8 2.8 0L21 6c.8.8.8 2 0 2.8L10 20"/></svg></button>
+        <button class="tool" title="Lasso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M12 13v8"/><path d="M9 18h6"/></svg></button>
+      </div>
+      <div class="tool-group">
+        <button class="tool" title="Zoom In"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></button>
+        <button class="tool" title="Zoom Out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 11h6"/></svg></button>
+        <button class="tool" title="Fit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></button>
+      </div>
+      <div class="tool-group" style="border: none; margin: 0;">
+        <button class="tool" title="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+        <button class="tool" title="Redo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg></button>
+      </div>
+    </div>
+    <div class="canvas-area">
+      <div class="canvas">
+        <svg class="canvas-img" width="640" height="420" viewBox="0 0 640 420">
+          <rect fill="#e0e0e0" width="640" height="420"/>
+          <rect fill="#d0d0d0" x="80" y="60" width="200" height="280" rx="8"/>
+          <rect fill="#c0c0c0" x="320" y="100" width="240" height="180" rx="4"/>
+          <circle fill="var(--accent)" cx="520" cy="320" r="40" opacity="0.3"/>
+        </svg>
+      </div>
+      <aside class="panel">
+        <div class="panel-header">AI Edit</div>
+        <div class="panel-content">
+          <div class="mask-indicator"><div class="mask-dot"></div>Mask active — 1,240px selected</div>
+          <div class="section">
+            <div class="section-title">Brush Settings</div>
+            <div class="slider-group">
+              <div class="slider-label"><span>Size</span><span>48px</span></div>
+              <input type="range" min="1" max="100" value="48">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label"><span>Hardness</span><span>75%</span></div>
+              <input type="range" min="0" max="100" value="75">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label"><span>Opacity</span><span>100%</span></div>
+              <input type="range" min="0" max="100" value="100">
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Prompt</div>
+            <textarea class="prompt-area" placeholder="Describe the edit you want to make...">Remove the object and fill with natural background texture</textarea>
+            <button class="btn btn-primary">Generate Edit</button>
+            <button class="btn btn-secondary">Inpaint Selection</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

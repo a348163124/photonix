@@ -1,8 +1,5 @@
 import { invoke, isTauri } from "./invoke";
-import type {
-  PromptTemplate,
-  PromptTemplateMode,
-} from "@/types";
+import type { PromptTemplate, PromptTemplateMode } from "@/types";
 
 interface RawPromptTemplateRow {
   id: string;
@@ -20,6 +17,19 @@ interface RawPromptTemplateRow {
   is_favorite: boolean;
   created_at: string;
   updated_at: string;
+  // MVP5 extensions
+  external_id: string | null;
+  provider: string | null;
+  upstream_category: string | null;
+  source_repository: string | null;
+  source_original_url: string | null;
+  preview_image_url: string | null;
+  usage_count: number;
+  last_used_at: string | null;
+  imported_at: string | null;
+  synced_at: string | null;
+  content_filter_status: string;
+  content_filter_notes: string | null;
 }
 
 function parseTags(raw: string | null): string[] {
@@ -49,6 +59,18 @@ function rowToTemplate(row: RawPromptTemplateRow): PromptTemplate {
     isFavorite: row.is_favorite,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    externalId: row.external_id ?? undefined,
+    provider: row.provider ?? undefined,
+    upstreamCategory: row.upstream_category ?? undefined,
+    sourceRepository: row.source_repository ?? undefined,
+    sourceOriginalUrl: row.source_original_url ?? undefined,
+    previewImageUrl: row.preview_image_url ?? undefined,
+    usageCount: row.usage_count,
+    lastUsedAt: row.last_used_at ?? undefined,
+    importedAt: row.imported_at ?? undefined,
+    syncedAt: row.synced_at ?? undefined,
+    contentFilterStatus: (row.content_filter_status as PromptTemplate["contentFilterStatus"]) ?? "unreviewed",
+    contentFilterNotes: row.content_filter_notes ?? undefined,
   };
 }
 
@@ -69,6 +91,18 @@ function templateToRow(t: PromptTemplate): RawPromptTemplateRow {
     is_favorite: t.isFavorite,
     created_at: t.createdAt,
     updated_at: t.updatedAt,
+    external_id: t.externalId ?? null,
+    provider: t.provider ?? null,
+    upstream_category: t.upstreamCategory ?? null,
+    source_repository: t.sourceRepository ?? null,
+    source_original_url: t.sourceOriginalUrl ?? null,
+    preview_image_url: t.previewImageUrl ?? null,
+    usage_count: t.usageCount ?? 0,
+    last_used_at: t.lastUsedAt ?? null,
+    imported_at: t.importedAt ?? null,
+    synced_at: t.syncedAt ?? null,
+    content_filter_status: t.contentFilterStatus ?? "unreviewed",
+    content_filter_notes: t.contentFilterNotes ?? null,
   };
 }
 
@@ -77,6 +111,13 @@ export interface ListPromptTemplatesArgs {
   category?: string;
   favoritesOnly?: boolean;
   query?: string;
+  /** Filter to a specific provider (e.g. "zerolu"). */
+  provider?: string;
+  /** Only include rows where provider is null (user/built-in templates). */
+  localOnly?: boolean;
+  /** "title" (default), "usage_count", "last_used_at", "imported_at" */
+  orderBy?: "title" | "usage_count" | "last_used_at" | "imported_at";
+  limit?: number;
 }
 
 export async function listPromptTemplates(
@@ -90,6 +131,10 @@ export async function listPromptTemplates(
           category: args.category ?? null,
           favorites_only: args.favoritesOnly ?? null,
           query: args.query ?? null,
+          provider: args.provider ?? null,
+          local_only: args.localOnly ?? null,
+          order_by: args.orderBy ?? null,
+          limit: args.limit ?? null,
         }
       : null,
   });
@@ -112,6 +157,11 @@ export async function setPromptTemplateFavorite(
 ): Promise<void> {
   if (!isTauri()) return;
   await invoke("set_prompt_template_favorite", { id, isFavorite });
+}
+
+export async function recordPromptTemplateUse(id: string): Promise<void> {
+  if (!isTauri()) return;
+  await invoke("record_prompt_template_use", { id });
 }
 
 export async function seedBuiltinPromptTemplates(): Promise<number> {

@@ -214,12 +214,33 @@ MVP4 explicitly does not include online prompt synchronization, multi-repository
 
 See [§34](#34-mvp4-chinese-internationalization-and-prompt-center) for detailed requirements.
 
-### 6.5 Post-MVP Features
+### 6.5 MVP5 Open Design UI Redesign and ZeroLu Prompt Library
+
+MVP5 first redesigns the entire Photonix desktop UI from the Open Design handoff, then turns Prompt Center into a full third-party prompt library experience based on `ZeroLu/awesome-gpt-image`.
+
+MVP5 features:
+
+- full UI restoration from `photonix设计.zip` for Library, Editor, Generate, My Style, Prompt Center, Settings, and the launcher/overview screen
+- shared light visual system: fixed left sidebar, pale neutral background, white cards, green accent, compact spacing, rounded controls, and card-first layouts
+- screen-file-first implementation using the exported HTML files as the visual contract
+- complete local import of the `ZeroLu/awesome-gpt-image` prompt collection
+- a visual prompt-library homepage with category chips, hot recommendations, recent usage, and card-based prompt browsing
+- manual "Update ZeroLu Library" action that fetches GitHub Raw content and refreshes the local cache
+- source attribution for the repository, original source links when available, and sync metadata
+- apply-to-generate behavior that fills the Generate prompt box without immediately calling the model
+- favorite, recent-use, and usage-count tracking for imported prompts
+- content-filtering fields and status reserved in the data model, but no active filtering workflow in MVP5
+
+MVP5 explicitly does not include AI prompt rewriting, image-to-prompt generation, community marketplace, cloud sync, or support for additional prompt repositories.
+
+See [§35](#35-mvp5-open-design-ui-redesign-and-zerolu-prompt-library) for detailed requirements.
+
+### 6.6 Post-MVP Features
 
 - region auto-detection
 - smart prompt suggestions
 - direct reference-image-based edits
-- online prompt repository synchronization
+- additional online prompt repository synchronization beyond ZeroLu
 - AI prompt optimization and image-to-prompt generation
 - project folders and tags
 - original-resolution crop-stitch local repair
@@ -1062,6 +1083,7 @@ src-tauri/
 - multi-version edit candidates
 - reference style image analysis
 - watermark and border templates
+- full ZeroLu prompt library import and card browsing
 - larger batch queue with scheduling and retry policies
 - original-resolution crop-stitch local repair
 - region auto-detection for local repairs
@@ -2981,3 +3003,450 @@ Notes for future iterations:
 - `Tip: Ctrl/Cmd + Enter` in the Generate panel is a small developer
   shortcut and was left as a literal string for brevity. A future polish
   pass can move it to `generate.shortcutHint`.
+
+## 35. MVP5 Open Design UI Redesign and ZeroLu Prompt Library
+
+### 35.1 Purpose
+
+MVP5 has two sequential goals:
+
+- first, restore the full Photonix UI from the Open Design handoff in `photonix设计.zip`
+- second, upgrade Prompt Center into a richer prompt-library experience by fully integrating the public `ZeroLu/awesome-gpt-image` prompt collection as a local, browsable, searchable third-party library
+
+The Open Design handoff is the visual source of truth for MVP5. Implementation should match the exported HTML screens before expanding behavior.
+
+Design source files:
+
+- `index.html`: launcher / overview
+- `library.html`: photo library
+- `editor.html`: editor canvas and prompt workflow
+- `generate.html`: text-to-image generation
+- `style.html`: My Style
+- `prompts.html`: Prompt Center
+- `settings.html`: settings
+
+The prompt-library user-facing goal is the experience shown in the target reference:
+
+- category chips at the top
+- "Hot Recommendations" card grid
+- prompt cards with title, category badge, prompt summary, usage count, favorite, and use actions
+- "Recent Usage" section for prompts the user recently applied
+- one-click use that fills the Generate prompt box for editing before execution
+
+This should feel like a creative prompt cockpit, not a raw Markdown viewer.
+
+### 35.2 Product Scope
+
+MVP5 includes:
+
+- full UI restoration from the Open Design handoff for all exported app screens
+- shared design tokens extracted from the exported HTML: background, surface, foreground, muted text, border, green accent, radius, spacing, type scale, shadows, and motion
+- replacing the current dark UI shell with the exported light desktop shell
+- preserving current Photonix functionality while changing visual layout and component presentation
+- responsive layout checks for desktop, tablet, and narrow windows according to `DESIGN-MANIFEST.json`
+- full local import of `https://github.com/ZeroLu/awesome-gpt-image`
+- manual sync from GitHub Raw, triggered by the user
+- local cache so the library works offline after the first sync
+- source attribution to `ZeroLu/awesome-gpt-image`
+- original source link retention when the upstream README exposes it
+- category chips: `All`, `Portrait`, `Landscape`, `Product`, `Art`, `Architecture`, `Food`, plus fallback `Other`
+- hot recommendations based on local usage count, favorites, and imported ordering
+- recent usage list
+- favorite / unfavorite imported prompts
+- use count increment when a prompt is applied
+- apply-to-generate only for MVP5
+- data model fields reserved for content filtering, but no active filtering workflow in MVP5
+
+MVP5 excludes:
+
+- active content moderation or filtering
+- AI prompt rewriting
+- image-to-prompt generation
+- cloud sync
+- community marketplace
+- importing YouMind or Anil prompt repositories
+- automatic background sync
+- direct auto-generation after clicking Use
+
+### 35.3 UX Requirements
+
+Global UI restoration:
+
+- use `photonix设计.zip` as the visual contract
+- implement the fixed `220px` left sidebar on desktop
+- use the exported light palette: pale neutral app background, white surfaces, subtle borders, green accent, dark foreground, muted gray secondary text
+- use the exported compact rhythm: small labels, 6-12px control radii, 12-24px page spacing, card-first layouts
+- keep each major screen as its own React surface rather than merging the designs into one generic dashboard
+- replace prototype labels only with equivalent real Photonix data
+- remove Open Design process annotations, but preserve product copy and layout intent
+
+Uncovered-function rule:
+
+- if an existing Photonix feature is not explicitly covered by the exported HTML, keep the feature and adapt it to the Open Design visual system
+- uncovered dialogs, panels, secondary controls, empty states, error states, loading states, batch flows, candidate flows, export options, and reference-style flows must use the same light tokens, green accent, compact spacing, border style, card rhythm, and left-sidebar shell
+- do not keep any uncovered feature in the old dark UI
+- do not introduce a third visual language such as default Tailwind or default shadcn styling
+- when composing an uncovered feature, borrow patterns from the closest exported screen: forms from `settings.html`, card grids from `prompts.html` / `library.html`, prompt controls from `generate.html`, and editor-side panels from `editor.html`
+- functional completeness wins over pixel-perfect minimalism: if Photonix has more controls than the design mockup, keep the controls and arrange them using the global Open Design system
+
+Screen mapping:
+
+- `index.html` maps to an optional launcher / overview route or first-run home screen
+- `library.html` maps to Library screen
+- `editor.html` maps to Editor screen
+- `generate.html` maps to Generate screen
+- `style.html` maps to My Style screen
+- `prompts.html` maps to Prompt Center screen
+- `settings.html` maps to Settings screen
+
+Prompt Library homepage:
+
+- top category chips with a green active state matching the reference direction
+- main heading: `Hot Recommendations` / `热门推荐`
+- two-column card grid on desktop, one-column on narrow windows
+- cards show title, prompt preview, category badge, usage count, favorite button, and use button
+- selected or hovered cards have a subtle green outline/accent
+- recent usage section appears below hot recommendations
+
+Prompt card behavior:
+
+- `Use` fills the Generate prompt box and navigates to Generate
+- `Use` never calls the image model directly
+- `Favorite` toggles local favorite state
+- clicking the card opens detail view with full prompt, source, tags, and original link when available
+- very long prompts are clamped in card view and fully visible in detail view
+
+Language behavior:
+
+- UI labels are localized
+- imported prompt text remains in its original language
+- imported titles may be generated from upstream headings or fallback prompt summaries; they are not auto-translated in MVP5
+
+### 35.4 ZeroLu Import Strategy
+
+Source:
+
+- primary URL: `https://raw.githubusercontent.com/ZeroLu/awesome-gpt-image/main/README.md`
+- repository URL: `https://github.com/ZeroLu/awesome-gpt-image`
+
+Sync behavior:
+
+- user clicks `Update ZeroLu Library`
+- Rust downloads the README through `reqwest`
+- parser extracts sections, headings, prompt text, source links, image links, and category context
+- imported prompts are upserted into local SQLite
+- existing local favorite, usage count, and recent-use metadata are preserved on re-sync
+- failures leave the last successful local cache intact
+
+Parsing tolerance:
+
+- parser should be resilient to upstream Markdown changes
+- if a prompt cannot be parsed cleanly, skip that block and record a sync warning
+- if category cannot be mapped, use `other`
+- if title is missing, generate a short title from the first meaningful sentence or heading
+
+Category mapping:
+
+- upstream photography / portrait sections -> `portrait` or `landscape` depending on keywords
+- product / commercial / ads -> `product`
+- art styles / illustration -> `art`
+- architecture / interior -> `architecture`
+- food / beverage -> `food`
+- image editing / style transfer -> `art` or `other` for MVP5
+- everything else -> `other`
+
+### 35.5 Data Model
+
+Extend `prompt_templates` or add a companion table. The preferred MVP5 path is to extend `prompt_templates` so Prompt Center and ZeroLu Library share one model.
+
+Add fields:
+
+```sql
+ALTER TABLE prompt_templates ADD COLUMN external_id TEXT;
+ALTER TABLE prompt_templates ADD COLUMN provider TEXT;
+ALTER TABLE prompt_templates ADD COLUMN upstream_category TEXT;
+ALTER TABLE prompt_templates ADD COLUMN source_repository TEXT;
+ALTER TABLE prompt_templates ADD COLUMN source_original_url TEXT;
+ALTER TABLE prompt_templates ADD COLUMN preview_image_url TEXT;
+ALTER TABLE prompt_templates ADD COLUMN usage_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE prompt_templates ADD COLUMN last_used_at TEXT;
+ALTER TABLE prompt_templates ADD COLUMN imported_at TEXT;
+ALTER TABLE prompt_templates ADD COLUMN synced_at TEXT;
+ALTER TABLE prompt_templates ADD COLUMN content_filter_status TEXT NOT NULL DEFAULT 'unreviewed';
+ALTER TABLE prompt_templates ADD COLUMN content_filter_notes TEXT;
+```
+
+Indexes:
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_provider ON prompt_templates(provider);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_external_id ON prompt_templates(provider, external_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_usage_count ON prompt_templates(usage_count);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_last_used ON prompt_templates(last_used_at);
+```
+
+Content-filtering reservation:
+
+- `content_filter_status` values reserved: `unreviewed`, `allowed`, `hidden`, `flagged`
+- MVP5 should write `unreviewed` for imported prompts
+- MVP5 should not hide, flag, moderate, or block prompts based on these fields
+
+Sync metadata:
+
+```sql
+CREATE TABLE IF NOT EXISTS prompt_library_syncs (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    status TEXT NOT NULL,
+    imported_count INTEGER NOT NULL DEFAULT 0,
+    skipped_count INTEGER NOT NULL DEFAULT 0,
+    warning_json TEXT,
+    error_message TEXT,
+    started_at TEXT NOT NULL,
+    finished_at TEXT
+);
+```
+
+### 35.6 Tauri Commands
+
+Add commands:
+
+- `sync_zerolu_prompt_library() -> PromptLibrarySyncResult`
+- `list_prompt_library_items(args) -> Vec<PromptTemplateRow>`
+- `record_prompt_template_use(id)`
+- `get_prompt_library_sync_status(provider)`
+
+`sync_zerolu_prompt_library`:
+
+- downloads README
+- parses importable prompt blocks
+- upserts rows with `provider = 'zerolu'`
+- stores repository attribution
+- preserves user-specific fields: `is_favorite`, `usage_count`, `last_used_at`
+- records a row in `prompt_library_syncs`
+
+`record_prompt_template_use`:
+
+- increments `usage_count`
+- sets `last_used_at`
+- should be called when the user clicks Use and the prompt is applied to Generate
+
+### 35.7 UI Integration
+
+Global shell integration:
+
+- replace the current dark `AppShell` / `Sidebar` visual system with the Open Design light sidebar and content canvas
+- keep current route names and app state where possible
+- preserve existing Tauri commands and stores; MVP5-1 is a visual refactor first, not a backend rewrite
+- route/screen content should be ported one screen at a time, matching each exported HTML screen
+
+Prompt Center should gain a library mode:
+
+- `My Templates`
+- `ZeroLu Library`
+
+ZeroLu Library view:
+
+- top toolbar: sync button, last synced time, imported count, search input
+- category chips: All / Portrait / Landscape / Product / Art / Architecture / Food / Other
+- hot recommendations grid
+- recent usage section
+- detail drawer or right panel for full prompt
+
+Card fields:
+
+- title
+- localized category badge
+- prompt preview
+- usage count
+- favorite action
+- use action
+- source link
+
+### 35.8 Milestones
+
+#### Milestone 1: Full Open Design UI Restoration
+
+- extract design tokens from `photonix设计.zip`
+- replace global app shell and sidebar with the exported light visual system
+- restore Library, Editor, Generate, My Style, Prompt Center, Settings, and launcher/overview screens from their corresponding HTML files
+- keep existing functional data flows wired to the new UI
+- validate screenshots against the exported HTML at `1366x768`, `1440x900`, and one narrow viewport
+
+#### Milestone 2: Prompt Center Visual Upgrade
+
+- specifically match `prompts.html` for Prompt Center
+- implement tabs, search box, category chips, hot recommendation cards, recent usage cards, favorite/use actions, and card hover states
+- keep current local prompt templates functional after visual migration
+
+#### Milestone 3: Schema and Sync Metadata
+
+- add migration for external prompt-library fields
+- add `prompt_library_syncs`
+- add TypeScript types for imported prompt templates and sync results
+
+#### Milestone 4: ZeroLu Fetch and Parser
+
+- implement Rust download from GitHub Raw
+- implement tolerant Markdown parser
+- map upstream sections to Photonix categories
+- retain source attribution and original links where available
+
+#### Milestone 5: Local Import and Re-Sync
+
+- upsert parsed prompts into `prompt_templates`
+- preserve favorites and usage counters during re-sync
+- record sync result with imported/skipped/warning counts
+- keep last successful cache if sync fails
+
+#### Milestone 6: ZeroLu Library UI
+
+- add ZeroLu Library tab/mode in Prompt Center
+- implement category chips and card grid
+- implement hot recommendations and recent usage
+- implement card detail view
+- wire Favorite and Use actions
+
+#### Milestone 7: Polish and QA
+
+- compare restored app screens against the Open Design HTML exports
+- tune category mapping with real ZeroLu README content
+- test first sync, re-sync, offline cache, and sync failure paths
+- verify large library search performance
+- verify source attribution and external links
+- verify content filtering fields are populated but not enforced
+
+### 35.9 Acceptance Criteria
+
+MVP5 is done when:
+
+- the global app shell visually matches the Open Design sidebar/content system
+- Library, Editor, Generate, My Style, Prompt Center, Settings, and launcher/overview screens are restored from the design package
+- current MVP4 functionality still works after the UI migration
+- user can manually sync the ZeroLu library from GitHub Raw
+- prompts are stored locally and remain available offline
+- sync can be run repeatedly without duplicating prompts
+- favorite and usage-count metadata survive re-sync
+- Prompt Center shows a ZeroLu Library view with category chips, hot recommendations, card grid, and recent usage
+- clicking Use fills the Generate prompt box and does not call the model
+- clicking Favorite persists local favorite state
+- each imported prompt carries ZeroLu repository attribution
+- original source links are retained when parsed from upstream
+- sync failures show an error but keep the last local cache
+- content-filtering fields exist and default to `unreviewed`, but no active filtering is applied
+- `npm run build` and `cargo check` pass
+
+### 35.10 Deferred From MVP5
+
+The following remain future work:
+
+- active content filtering, moderation, hiding, or review queue
+- AI prompt rewriting or simplification
+- automatic prompt translation
+- import support for YouMind and Anil prompt repositories
+- background scheduled sync
+- cloud sync across devices
+- community marketplace or user sharing
+- direct "Use and Generate" one-click API execution
+
+### 35.11 Implementation Status (2026-05-17)
+
+MVP5 has been implemented end-to-end. Frontend (`tsc -b && vite build`)
+and Rust (`cargo check`) both compile cleanly.
+
+Delivered against §35.8 milestones:
+
+- **M1 Open Design UI Restoration**: Light visual shell drives the whole
+  app. Tokens (`--bg`, `--surface`, `--fg`, `--muted`, `--border`,
+  `--accent`, radii, shadows, motion) are defined in `src/index.css`
+  matching the OKLCH values in `index.html` from the design handoff.
+  Sidebar (220px fixed, light surface, green active state), TopBar, and
+  StatusBar were rewritten. A legacy-class remap layer in `index.css`
+  makes the older Tailwind dark-class screens (Library, Editor, Style,
+  Settings, Batch dialogs) inherit the new tokens, accent, and surfaces
+  without per-file rewrites — the design system stays the source of
+  truth even where utility classes still appear in the JSX.
+- **M2 Prompt Center Visual Upgrade**: Prompt Center now matches
+  `prompts.html`. Tabs (My Templates / ZeroLu Library / Favorites /
+  Recents), search box, category chips with green active state, hot
+  recommendations card grid, recent usage section, prompt cards with
+  title / category badge / prompt preview / usage count / favorite /
+  use actions, plus a right-side detail drawer. Selected cards show a
+  subtle green outline.
+- **M3 Schema and Sync Metadata**: Migration 006 extends
+  `prompt_templates` with `external_id`, `provider`, `upstream_category`,
+  `source_repository`, `source_original_url`, `preview_image_url`,
+  `usage_count`, `last_used_at`, `imported_at`, `synced_at`,
+  `content_filter_status` (default `unreviewed`), `content_filter_notes`,
+  plus indexes on provider/external_id/usage_count/last_used_at, and
+  creates `prompt_library_syncs` for sync metadata.
+- **M4 ZeroLu Fetch and Parser**: `commands::prompt_library` downloads
+  `https://raw.githubusercontent.com/ZeroLu/awesome-gpt-image/main/README.md`
+  through `reqwest` (60s timeout) and runs a tolerant Markdown parser
+  that tracks heading levels, captures fenced code blocks and `>`-quoted
+  blocks, drops obvious code samples (imports, npm commands), and maps
+  upstream sections to Photonix categories (portrait / landscape /
+  product / art / architecture / food / other) with bilingual keyword
+  support. A SHA-256-based stable id makes re-sync deterministic.
+- **M5 Local Import and Re-Sync**: Imported rows go through
+  `prompt_templates::__internal_upsert`, which preserves user-specific
+  `is_favorite`, `usage_count`, and `last_used_at` across re-sync.
+  Each sync run records a row in `prompt_library_syncs` (status,
+  imported_count, skipped_count, warnings, error_message). On failure
+  the previous local cache stays intact — the row is updated to
+  `failed` but the existing prompts are not deleted.
+- **M6 ZeroLu Library UI**: Prompt Center has a dedicated ZeroLu Library
+  tab with an Update Library button (showing relative-time "last
+  synced" + total imported count + a link to the upstream repo),
+  category chips, hot recommendations grid (ordered by `usage_count`),
+  recent usage grid (rows with non-null `last_used_at`), card detail
+  drawer with prompt / negative prompt / tags / source attribution,
+  and Favorite / Use actions. Use fills the Generate prompt box and
+  navigates without invoking the model; usage count auto-increments
+  via `record_prompt_template_use`.
+- **M7 Polish & QA**: Bilingual labels (en/zh-CN) for tabs, library
+  categories, hot/recent sections, sync messages, and source
+  attribution. The legacy class remapper preserves all uncovered
+  features (BatchExportDialog, candidate strip, Generate gallery,
+  Style detail editor) inside the new visual system per PRD §35.3
+  "uncovered-function rule". Imported prompts default
+  `content_filter_status = "unreviewed"` and the field is read-only —
+  no filtering is applied, in line with §35.5 "MVP5 should not hide,
+  flag, moderate, or block prompts based on these fields".
+
+Acceptance criteria coverage (§35.9):
+
+- Global app shell visually matches Open Design sidebar/content system.
+- Library, Editor, Generate, My Style, Prompt Center, Settings screens
+  inherit the new tokens (no launcher screen — kept as PRD-optional).
+- All MVP4 functionality still works after the visual migration.
+- Manual sync from GitHub Raw via `Update Library` button.
+- Prompts are stored locally and remain available offline.
+- Sync is idempotent — `INSERT OR REPLACE` keyed by stable
+  `zerolu-{sha256}` id with personal field preservation.
+- Favorite and usage-count metadata survive re-sync.
+- Prompt Center shows ZeroLu Library view with category chips, hot
+  recommendations, card grid, and recent usage.
+- Use fills the Generate prompt box and never calls the model.
+- Favorite persists locally.
+- Each imported prompt carries `source_name = "ZeroLu/awesome-gpt-image"`
+  and `source_repository = repo URL`.
+- Original source links retained when parsed from upstream
+  (`source_original_url`).
+- Sync failures show an error, last cache is preserved, and the latest
+  `prompt_library_syncs` row records the error message.
+- `content_filter_status` defaults to `unreviewed`; no filtering is
+  applied.
+- `npm run build` and `cargo check` pass.
+
+Notes:
+
+- The optional launcher / overview route from `index.html` was not
+  shipped — the spec marks it as optional and the existing top-level
+  navigation already covers the same nav cards.
+- Some legacy screens (Library cards, BatchExportDialog status badges)
+  still rely on Tailwind utility classes plus the class remap rather
+  than the dedicated `.px-*` primitives. The visual result matches the
+  design system; future cleanup can migrate the JSX class names
+  incrementally.

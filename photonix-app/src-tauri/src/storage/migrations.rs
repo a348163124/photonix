@@ -24,6 +24,7 @@ pub fn run(conn: &Connection) -> Result<(), String> {
         (3, MIGRATION_003_PROMPT_HISTORY_AND_PRESETS),
         (4, MIGRATION_004_STYLE_AND_CANDIDATES),
         (5, MIGRATION_005_PROMPT_TEMPLATES),
+        (6, MIGRATION_006_PROMPT_LIBRARY),
     ];
 
     for (version, sql) in migrations {
@@ -249,4 +250,39 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_mode ON prompt_templates(mode);
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_category ON prompt_templates(category);
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_favorite ON prompt_templates(is_favorite);
+"#;
+
+const MIGRATION_006_PROMPT_LIBRARY: &str = r#"
+ALTER TABLE prompt_templates ADD COLUMN external_id TEXT;
+ALTER TABLE prompt_templates ADD COLUMN provider TEXT;
+ALTER TABLE prompt_templates ADD COLUMN upstream_category TEXT;
+ALTER TABLE prompt_templates ADD COLUMN source_repository TEXT;
+ALTER TABLE prompt_templates ADD COLUMN source_original_url TEXT;
+ALTER TABLE prompt_templates ADD COLUMN preview_image_url TEXT;
+ALTER TABLE prompt_templates ADD COLUMN usage_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE prompt_templates ADD COLUMN last_used_at TEXT;
+ALTER TABLE prompt_templates ADD COLUMN imported_at TEXT;
+ALTER TABLE prompt_templates ADD COLUMN synced_at TEXT;
+ALTER TABLE prompt_templates ADD COLUMN content_filter_status TEXT NOT NULL DEFAULT 'unreviewed';
+ALTER TABLE prompt_templates ADD COLUMN content_filter_notes TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_provider ON prompt_templates(provider);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_external_id ON prompt_templates(provider, external_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_usage_count ON prompt_templates(usage_count);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_last_used ON prompt_templates(last_used_at);
+
+CREATE TABLE IF NOT EXISTS prompt_library_syncs (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    status TEXT NOT NULL,
+    imported_count INTEGER NOT NULL DEFAULT 0,
+    skipped_count INTEGER NOT NULL DEFAULT 0,
+    warning_json TEXT,
+    error_message TEXT,
+    started_at TEXT NOT NULL,
+    finished_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_library_syncs_provider ON prompt_library_syncs(provider);
 "#;

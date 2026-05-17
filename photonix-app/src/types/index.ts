@@ -481,7 +481,9 @@ export interface PromptTemplate {
    * Category id matched against the i18n `promptCenter.categories.*` keys
    * for display. Built-in seed values are: landscape, portrait, product,
    * cinematic, social, illustration, interior, macro, editing, styleTransfer.
-   * User-created templates may use any string; unknown ids are shown verbatim.
+   * MVP5 extends this with the ZeroLu library buckets: landscape, portrait,
+   * product, art, architecture, food, other. User-created templates may use
+   * any string; unknown ids are shown verbatim.
    */
   category: string;
   title: string;
@@ -496,9 +498,30 @@ export interface PromptTemplate {
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
+
+  // ── MVP5: external library fields ──────────────────────────────────────
+  /** Stable upstream id used for deterministic re-sync upserts. */
+  externalId?: string;
+  /** "zerolu" for the ZeroLu library; undefined for user/built-in. */
+  provider?: string;
+  /** Original heading or section name from the upstream README. */
+  upstreamCategory?: string;
+  sourceRepository?: string;
+  sourceOriginalUrl?: string;
+  previewImageUrl?: string;
+  usageCount: number;
+  lastUsedAt?: string;
+  importedAt?: string;
+  syncedAt?: string;
+  /** Reserved for future filtering. MVP5 only writes "unreviewed". */
+  contentFilterStatus: "unreviewed" | "allowed" | "hidden" | "flagged";
+  contentFilterNotes?: string;
 }
 
-/** Built-in category ids that get localized via i18n keys. */
+/**
+ * Built-in MVP4 category ids (used by My Templates tab) plus the MVP5
+ * library category ids (used by ZeroLu Library tab).
+ */
 export const PROMPT_CENTER_CATEGORIES: string[] = [
   "landscape",
   "portrait",
@@ -511,3 +534,16 @@ export const PROMPT_CENTER_CATEGORIES: string[] = [
   "editing",
   "styleTransfer",
 ];
+
+/** MVP5 §35.4 — chip categories on the ZeroLu Library tab. */
+export const PROMPT_LIBRARY_CATEGORIES = [
+  "all",
+  "portrait",
+  "landscape",
+  "product",
+  "art",
+  "architecture",
+  "food",
+  "other",
+] as const;
+export type PromptLibraryCategory = (typeof PROMPT_LIBRARY_CATEGORIES)[number];

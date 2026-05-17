@@ -3,6 +3,7 @@ pub mod edit;
 pub mod generate;
 pub mod library;
 pub mod prompt;
+pub mod prompt_library;
 pub mod prompt_templates;
 pub mod reference_style;
 pub mod secrets;

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图库 — AI 图像编辑器</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.005 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(22% 0.02 240);
+      --muted: oklch(50% 0.018 240);
+      --border: oklch(90% 0.008 240);
+      --accent: oklch(58% 0.16 145);
+      --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo {
+      padding: 20px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, oklch(50% 0.18 160) 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: white;
+    }
+
+    .nav {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover {
+      background: var(--surface-hover);
+      color: var(--fg);
+    }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .nav-item.active .nav-icon {
+      opacity: 1;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      padding: 16px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 12px 10px 40px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--fg);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: var(--muted);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      color: var(--fg);
+      transition: all 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-chip:hover, .filter-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .status-info {
+      display: flex;
+      gap: 24px;
+    }
+
+    .status-item {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .status-item strong {
+      color: var(--fg);
+      font-family: var(--font-mono);
+    }
+
+    .selection-actions {
+      display: none;
+      gap: 8px;
+    }
+
+    .selection-actions.visible {
+      display: flex;
+    }
+
+    /* Image Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .card-checkbox {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid white;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card:hover .card-checkbox,
+    .card.selected .card-checkbox {
+      opacity: 1;
+    }
+
+    .card.selected .card-checkbox {
+      background: var(--accent);
+    }
+
+    .card-img {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, oklch(90% 0.008 240) 0%, oklch(85% 0.008 240) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: white;
+    }
+
+    .card-info {
+      padding: 14px;
+    }
+
+    .card-name {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Empty State */
+    .empty {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 100px 40px;
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: var(--surface);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-icon svg {
+      width: 40px;
+      height: 40px;
+      color: var(--muted);
+    }
+
+    .empty h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 19l-5-5-4 4-3-3-5 5"/></svg>
+      </div>
+      AI 图像编辑器
+    </div>
+
+    <nav class="nav">
+      <a href="library.html" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        图库
+      </a>
+      <a href="editor.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+        编辑器
+      </a>
+      <a href="generate.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+        生成
+      </a>
+      <a href="style.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        我的风格
+      </a>
+      <a href="prompts.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        提示词中心
+      </a>
+      <a href="settings.html" class="nav-item" style="margin-top: auto;">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        设置
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div>v0.4 · MVP4</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" placeholder="Search images...">
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-chip active">All</div>
+        <div class="filter-chip">Unedited</div>
+        <div class="filter-chip">Edited</div>
+      </div>
+
+      <button class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Sort
+      </button>
+
+      <div style="flex: 1;"></div>
+
+      <button class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M9 3v18"/>
+          <path d="M3 9h18"/>
+        </svg>
+        Select
+      </button>
+
+      <button class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Import Folder
+      </button>
+    </div>
+
+    <div class="content">
+      <div class="status-bar">
+        <div class="status-info">
+          <span class="status-item"><strong>24</strong> images</span>
+          <span class="status-item"><strong>1.2 GB</strong> total</span>
+          <span class="status-item"><strong>8</strong> edited</span>
+        </div>
+
+        <div class="selection-actions">
+          <button class="btn">Batch Edit</button>
+          <button class="btn">Export</button>
+          <button class="btn">Clear Selection</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- Sample images -->
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #2d4a3e 0%, #1a2f28 100%)"></div>
+            <div class="card-badge">Edited</div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">landscape_sunset.png</div>
+            <div class="card-meta">
+              <span>3.1 MB</span>
+              <span>2560×1440</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #4a3d2d 0%, #2f281a 100%)"></div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">mountain_vista.jpg</div>
+            <div class="card-meta">
+              <span>4.8 MB</span>
+              <span>3000×2000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #2d3a4a 0%, #1a242f 100%)"></div>
+            <div class="card-badge">Edited</div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">portrait_001.jpg</div>
+            <div class="card-meta">
+              <span>2.4 MB</span>
+              <span>1920×1080</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #3d2d4a 0%, #241a2f 100%)"></div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">night_city.png</div>
+            <div class="card-meta">
+              <span>5.2 MB</span>
+              <span>3840×2160</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #4a2d2d 0%, #2f1a1a 100%)"></div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">flower_macro.jpg</div>
+            <div class="card-meta">
+              <span>1.8 MB</span>
+              <span>1200×1200</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #2d4a4a 0%, #1a2f2f 100%)"></div>
+            <div class="card-badge">Edited</div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">ocean_waves.png</div>
+            <div class="card-meta">
+              <span>6.1 MB</span>
+              <span>4000×2667</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #3a4a2d 0%, #242f1a 100%)"></div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">forest_path.jpg</div>
+            <div class="card-meta">
+              <span>3.6 MB</span>
+              <span>2400×1600</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='editor.html'">
+          <div class="card-checkbox">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="card-img">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg, #4a3a2d 0%, #2f241a 100%)"></div>
+            <div class="card-badge">Edited</div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">desert_dunes.png</div>
+            <div class="card-meta">
+              <span>4.2 MB</span>
+              <span>2800×1867</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

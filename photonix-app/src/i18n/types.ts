@@ -500,6 +500,17 @@ export interface TranslationDictionary {
       editing: string;
       styleTransfer: string;
     };
+    /** MVP5 §35.4 ZeroLu library category chips. */
+    libraryCategories: {
+      all: string;
+      portrait: string;
+      landscape: string;
+      product: string;
+      art: string;
+      architecture: string;
+      food: string;
+      other: string;
+    };
     empty: string;
     emptyFiltered: string;
     deleteCustom: string;
@@ -516,5 +527,36 @@ export interface TranslationDictionary {
     replaceConfirm: string;
     validationRequired: string;
     unknownExportError: string;
+    // MVP5 tabs and sections
+    tabs: {
+      myTemplates: string;
+      zeroluLibrary: string;
+      favorites: string;
+      recents: string;
+    };
+    hotRecommendations: string;
+    recentUsage: string;
+    favoritesSection: string;
+    usageCountFmt: string; // "Used {count} times"
+    usageCountKFmt: string; // "Used {count}k times" — for big numbers
+    lastUsedFmt: string; // "Last used: {time}"
+    use: string;
+    useAndOpenGenerate: string;
+    library: {
+      heading: string;
+      lastSynced: string;
+      neverSynced: string;
+      importedFmt: string; // "{count} imported prompts"
+      sync: string;
+      syncing: string;
+      syncFailed: string;
+      syncOk: string; // "Imported {count} prompts"
+      syncWarning: string; // "Imported {imported}, skipped {skipped}"
+      offlineHint: string;
+      sourceAttribution: string;
+      openSource: string;
+      emptyBeforeSync: string;
+      noResults: string;
+    };
   };
 }
