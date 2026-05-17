@@ -261,6 +261,125 @@ pub fn load_setting(db: State<'_, Database>, key: String) -> Result<Option<Strin
 
 // ─── Export ──────────────────────────────────────────────────────────────────
 
+/// Resolve a path, falling back to the literal path when it doesn't exist yet
+/// (e.g. the destination of a fresh export). On Windows, dunce::canonicalize
+/// would be ideal but we avoid the extra dependency: std::fs::canonicalize is
+/// adequate for paths that already exist, and we only use this for the
+/// already-on-disk source.
+fn canonicalize_existing(p: &std::path::Path) -> std::path::PathBuf {
+    std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
+}
+
+/// Compose an output path under `dir` from a user-supplied filename.
+/// Refuses any filename that contains path separators, drive letters, leading
+/// dots-only segments, or other characters that could escape `dir`. Returns
+/// the joined absolute path on success.
+fn safe_join_output(dir: &str, filename: &str) -> Result<std::path::PathBuf, String> {
+    if filename.is_empty() {
+        return Err("Empty filename".into());
+    }
+    // Reject anything that looks like a path. We intentionally check the raw
+    // string (not Path components) because some Windows tricks like "C:" are
+    // not flagged as components.
+    if filename.contains('/')
+        || filename.contains('\\')
+        || filename.contains(':')
+        || filename.contains('\0')
+    {
+        return Err(format!(
+            "Filename must not contain path separators or drive specs: {}",
+            filename
+        ));
+    }
+    if filename == "." || filename == ".." {
+        return Err(format!("Invalid filename: {}", filename));
+    }
+    // Reject leading/trailing whitespace and Windows reserved names defensively.
+    let trimmed = filename.trim();
+    if trimmed.is_empty() || trimmed != filename {
+        return Err(format!("Filename has invalid whitespace: {}", filename));
+    }
+
+    let dir_path = std::path::Path::new(dir);
+    let candidate = dir_path.join(filename);
+
+    // After joining, double-check that the parent of the candidate is exactly
+    // the directory we were given. This is paranoia — the checks above already
+    // forbid separators — but it costs nothing.
+    let candidate_parent = candidate.parent().ok_or("Output path has no parent")?;
+    if candidate_parent != dir_path {
+        return Err(format!(
+            "Filename resolves outside the output directory: {}",
+            filename
+        ));
+    }
+
+    Ok(candidate)
+}
+
+/// Pure pixel pipeline: open → border → watermark → optional resize → encode.
+/// Caller is responsible for ensuring `dst` is safe to write.
+fn run_export_pipeline(
+    src: &str,
+    dst: &std::path::Path,
+    format_lower: &str,
+    quality: u8,
+    max_long_edge: Option<u32>,
+    border: Option<border::BorderConfig>,
+    watermark: Option<watermark::WatermarkConfig>,
+) -> Result<(), String> {
+    let mut img =
+        image::open(src).map_err(|e| format!("Failed to open source ({}): {}", src, e))?;
+
+    if let Some(cfg) = &border {
+        img = border::apply_border(img, cfg);
+    }
+    if let Some(cfg) = &watermark {
+        if !cfg.text.is_empty() {
+            img = watermark::apply_watermark(img, cfg)?;
+        }
+    }
+    if let Some(max_edge) = max_long_edge {
+        use image::GenericImageView;
+        let (w, h) = img.dimensions();
+        let long_edge = w.max(h);
+        if long_edge > max_edge {
+            let scale = max_edge as f32 / long_edge as f32;
+            let target_w = ((w as f32 * scale).round() as u32).max(1);
+            let target_h = ((h as f32 * scale).round() as u32).max(1);
+            img = img.resize(target_w, target_h, image::imageops::FilterType::Lanczos3);
+        }
+    }
+
+    if let Some(parent) = dst.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create output directory: {}", e))?;
+        }
+    }
+
+    match format_lower {
+        "png" => {
+            img.save_with_format(dst, image::ImageFormat::Png)
+                .map_err(|e| format!("Failed to save PNG: {}", e))?;
+        }
+        "jpeg" | "jpg" => {
+            let rgb = img.to_rgb8();
+            let output_file = std::fs::File::create(dst)
+                .map_err(|e| format!("Failed to create output file ({}): {}", dst.display(), e))?;
+            let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(
+                std::io::BufWriter::new(output_file),
+                quality,
+            );
+            encoder
+                .encode_image(&rgb)
+                .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
+        }
+        _ => return Err(format!("Unsupported format: {}", format_lower)),
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn export_image(
     source_path: String,
@@ -284,72 +403,241 @@ pub async fn export_image(
         return Err(format!("Unsupported format: {}", format));
     }
 
+    // Refuse to overwrite the source. The source already exists so we can
+    // canonicalize it; the destination may not exist yet, so we resolve the
+    // parent and recombine.
+    let src_canon = canonicalize_existing(std::path::Path::new(&source_path));
+    let dst_path = std::path::Path::new(&output_path);
+    let dst_canon = match dst_path.parent() {
+        Some(p) if !p.as_os_str().is_empty() => {
+            // If the parent doesn't exist yet we can't canonicalize; assume it
+            // is safe and let create_dir_all handle creation.
+            let parent_canon = canonicalize_existing(p);
+            match dst_path.file_name() {
+                Some(name) => parent_canon.join(name),
+                None => dst_path.to_path_buf(),
+            }
+        }
+        _ => dst_path.to_path_buf(),
+    };
+    if src_canon == dst_canon {
+        return Err(format!(
+            "Refusing to overwrite the source file: {}",
+            source_path
+        ));
+    }
+
     let src = source_path.clone();
     let dst = output_path.clone();
     let result = tokio::task::spawn_blocking(move || -> Result<(), String> {
-        let mut img = image::open(&src)
-            .map_err(|e| format!("Failed to open source ({}): {}", src, e))?;
-
-        // 1. Border / canvas expansion (operates on source resolution)
-        if let Some(cfg) = &border {
-            img = border::apply_border(img, cfg);
-        }
-
-        // 2. Watermark text (rendered before resize so font size is consistent
-        //    relative to the source resolution; resize will scale it down too)
-        if let Some(cfg) = &watermark {
-            if !cfg.text.is_empty() {
-                img = watermark::apply_watermark(img, cfg)?;
-            }
-        }
-
-        // 3. Optional long-edge resize for social-sharing presets
-        if let Some(max_edge) = max_long_edge {
-            use image::GenericImageView;
-            let (w, h) = img.dimensions();
-            let long_edge = w.max(h);
-            if long_edge > max_edge {
-                let scale = max_edge as f32 / long_edge as f32;
-                let target_w = ((w as f32 * scale).round() as u32).max(1);
-                let target_h = ((h as f32 * scale).round() as u32).max(1);
-                img = img.resize(target_w, target_h, image::imageops::FilterType::Lanczos3);
-            }
-        }
-
-        // Ensure the output directory exists
-        if let Some(parent) = std::path::Path::new(&dst).parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("Failed to create output directory: {}", e))?;
-            }
-        }
-
-        match format_lower.as_str() {
-            "png" => {
-                img.save_with_format(&dst, image::ImageFormat::Png)
-                    .map_err(|e| format!("Failed to save PNG: {}", e))?;
-            }
-            "jpeg" | "jpg" => {
-                let rgb = img.to_rgb8();
-                let output_file = std::fs::File::create(&dst)
-                    .map_err(|e| format!("Failed to create output file ({}): {}", dst, e))?;
-                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(
-                    std::io::BufWriter::new(output_file),
-                    quality,
-                );
-                encoder
-                    .encode_image(&rgb)
-                    .map_err(|e| format!("Failed to encode JPEG: {}", e))?;
-            }
-            _ => unreachable!(),
-        }
-        Ok(())
+        run_export_pipeline(
+            &src,
+            std::path::Path::new(&dst),
+            &format_lower,
+            quality,
+            max_long_edge,
+            border,
+            watermark,
+        )
     })
     .await
     .map_err(|e| format!("Export task panicked: {}", e))?;
 
     result?;
     Ok(output_path)
+}
+
+// ─── Batch Export ────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BatchExportRequest {
+    pub source_path: String,
+    pub output_dir: String,
+    /// Caller-proposed filename. May still be reconciled (rename suffix) or
+    /// rejected (existing file + skip policy) on this side.
+    pub filename: String,
+    pub format: String,
+    pub quality: u8,
+    pub max_long_edge: Option<u32>,
+    pub border: Option<border::BorderConfig>,
+    pub watermark: Option<watermark::WatermarkConfig>,
+    /// "skip" | "overwrite" | "rename"
+    pub overwrite_policy: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BatchExportResult {
+    /// "succeeded" | "skipped" | "failed"
+    pub status: String,
+    pub output_path: Option<String>,
+    pub final_filename: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Batch-friendly export. Resolves the final on-disk filename atomically on
+/// the Rust side so the JS layer can't race or get tricked into writing
+/// outside the requested output directory.
+#[tauri::command]
+pub async fn batch_export_image(
+    request: BatchExportRequest,
+) -> Result<BatchExportResult, String> {
+    if !std::path::Path::new(&request.source_path).exists() {
+        return Ok(BatchExportResult {
+            status: "failed".into(),
+            output_path: None,
+            final_filename: None,
+            error: Some(format!("Source not found: {}", request.source_path)),
+        });
+    }
+
+    let format_lower = request.format.to_lowercase();
+    if !matches!(format_lower.as_str(), "png" | "jpeg" | "jpg") {
+        return Ok(BatchExportResult {
+            status: "failed".into(),
+            output_path: None,
+            final_filename: None,
+            error: Some(format!("Unsupported format: {}", request.format)),
+        });
+    }
+
+    let dir_path = std::path::Path::new(&request.output_dir);
+    if !dir_path.exists() {
+        std::fs::create_dir_all(dir_path)
+            .map_err(|e| format!("Failed to create output directory: {}", e))?;
+    } else if !dir_path.is_dir() {
+        return Ok(BatchExportResult {
+            status: "failed".into(),
+            output_path: None,
+            final_filename: None,
+            error: Some(format!("Output is not a directory: {}", request.output_dir)),
+        });
+    }
+
+    // 1. Filename safety: must be a single basename, no separators, no escape.
+    let initial = match safe_join_output(&request.output_dir, &request.filename) {
+        Ok(p) => p,
+        Err(e) => {
+            return Ok(BatchExportResult {
+                status: "failed".into(),
+                output_path: None,
+                final_filename: None,
+                error: Some(e),
+            });
+        }
+    };
+
+    // 2. Reconcile against existing files according to policy.
+    let (resolved_path, resolved_name) = match request.overwrite_policy.as_str() {
+        "overwrite" => (initial.clone(), request.filename.clone()),
+        "skip" => {
+            if initial.exists() {
+                return Ok(BatchExportResult {
+                    status: "skipped".into(),
+                    output_path: None,
+                    final_filename: None,
+                    error: None,
+                });
+            }
+            (initial.clone(), request.filename.clone())
+        }
+        "rename" | _ => {
+            if !initial.exists() {
+                (initial.clone(), request.filename.clone())
+            } else {
+                let (stem, ext) = split_basename(&request.filename);
+                let mut chosen: Option<(std::path::PathBuf, String)> = None;
+                for i in 1..1000 {
+                    let candidate_name = if ext.is_empty() {
+                        format!("{}_{}", stem, i)
+                    } else {
+                        format!("{}_{}.{}", stem, i, ext)
+                    };
+                    let candidate_path = match safe_join_output(&request.output_dir, &candidate_name) {
+                        Ok(p) => p,
+                        Err(e) => {
+                            return Ok(BatchExportResult {
+                                status: "failed".into(),
+                                output_path: None,
+                                final_filename: None,
+                                error: Some(e),
+                            });
+                        }
+                    };
+                    if !candidate_path.exists() {
+                        chosen = Some((candidate_path, candidate_name));
+                        break;
+                    }
+                }
+                match chosen {
+                    Some(c) => c,
+                    None => {
+                        return Ok(BatchExportResult {
+                            status: "failed".into(),
+                            output_path: None,
+                            final_filename: None,
+                            error: Some(
+                                "Could not find a free filename after 1000 attempts".into(),
+                            ),
+                        });
+                    }
+                }
+            }
+        }
+    };
+
+    // 3. Source != destination protection. Same logic as the single-export
+    //    command: canonicalize both ends and refuse if they collide.
+    let src_canon = canonicalize_existing(std::path::Path::new(&request.source_path));
+    let dst_canon = canonicalize_existing(&resolved_path);
+    if src_canon == dst_canon {
+        return Ok(BatchExportResult {
+            status: "failed".into(),
+            output_path: None,
+            final_filename: None,
+            error: Some(format!(
+                "Refusing to overwrite source file: {}",
+                request.source_path
+            )),
+        });
+    }
+
+    // 4. Run the pixel pipeline on a blocking thread.
+    let src = request.source_path.clone();
+    let dst = resolved_path.clone();
+    let fmt = format_lower.clone();
+    let q = request.quality;
+    let max_edge = request.max_long_edge;
+    let border = request.border;
+    let watermark = request.watermark;
+    let pipeline_result = tokio::task::spawn_blocking(move || -> Result<(), String> {
+        run_export_pipeline(&src, &dst, &fmt, q, max_edge, border, watermark)
+    })
+    .await
+    .map_err(|e| format!("Export task panicked: {}", e))?;
+
+    match pipeline_result {
+        Ok(()) => Ok(BatchExportResult {
+            status: "succeeded".into(),
+            output_path: Some(resolved_path.to_string_lossy().to_string()),
+            final_filename: Some(resolved_name),
+            error: None,
+        }),
+        Err(e) => Ok(BatchExportResult {
+            status: "failed".into(),
+            output_path: None,
+            final_filename: None,
+            error: Some(e),
+        }),
+    }
+}
+
+fn split_basename(filename: &str) -> (String, String) {
+    if let Some(dot) = filename.rfind('.') {
+        if dot > 0 {
+            return (filename[..dot].to_string(), filename[dot + 1..].to_string());
+        }
+    }
+    (filename.to_string(), String::new())
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

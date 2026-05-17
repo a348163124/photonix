@@ -33,6 +33,7 @@ pub fn run() {
             commands::save_setting,
             commands::load_setting,
             commands::export_image,
+            commands::batch_export_image,
             commands::edit::submit_edit,
             commands::edit::save_mask_to_disk,
             commands::prompt::compile_prompt,

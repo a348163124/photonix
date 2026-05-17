@@ -1,18 +1,17 @@
 import { useEffect } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { isTauri } from "@/services/tauri/invoke";
-import { getVersions } from "@/services/tauri/versions";
+import { loadVersionsForImage } from "@/services/loadVersionsForImage";
 
 export function HistoryPanel() {
   const selectedImageId = useAppStore((s) => s.selectedImageId);
   const versions = useAppStore((s) => s.currentVersions);
-  const setCurrentVersions = useAppStore((s) => s.setCurrentVersions);
   const activeVersionId = useAppStore((s) => s.activeVersionId);
   const setActiveVersion = useAppStore((s) => s.setActiveVersion);
 
   useEffect(() => {
     if (selectedImageId && isTauri()) {
-      getVersions(selectedImageId).then(setCurrentVersions).catch(console.error);
+      void loadVersionsForImage(selectedImageId);
     }
   }, [selectedImageId]);
 

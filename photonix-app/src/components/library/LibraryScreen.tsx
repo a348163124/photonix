@@ -3,7 +3,7 @@ import { useAppStore } from "@/stores/appStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useBatchStore } from "@/stores/batchStore";
 import { importFolder, getAllImages, generateThumbnail } from "@/services/tauri/images";
-import { getVersions } from "@/services/tauri/versions";
+import { loadVersionsForImage } from "@/services/loadVersionsForImage";
 import { isTauri } from "@/services/tauri/invoke";
 import { BatchDialog } from "./BatchDialog";
 import { BatchExportDialog } from "./BatchExportDialog";
@@ -131,24 +131,9 @@ export function LibraryScreen() {
     selectImage(imageId);
     // Load versions immediately so the editor (and candidate strip) can
     // resolve version_id → storage path on first render after reopening.
-    if (isTauri()) {
-      getVersions(imageId)
-        .then((versions) => {
-          useAppStore.getState().setCurrentVersions(versions);
-          const current = versions.find((v) => v.isCurrent);
-          useAppStore
-            .getState()
-            .setActiveVersion(current?.id ?? versions[0]?.id ?? null);
-        })
-        .catch((err) => {
-          console.error("Failed to load versions:", err);
-          useAppStore.getState().setCurrentVersions([]);
-          useAppStore.getState().setActiveVersion(null);
-        });
-    } else {
-      useAppStore.getState().setCurrentVersions([]);
-      useAppStore.getState().setActiveVersion(null);
-    }
+    // The helper guards against the race where the user switches images
+    // again before this call resolves.
+    void loadVersionsForImage(imageId);
     setView("editor");
   }
 

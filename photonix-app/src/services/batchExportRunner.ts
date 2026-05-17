@@ -113,9 +113,18 @@ async function buildFromFavorites(images: ImageAsset[]): Promise<BatchExportItem
   return items;
 }
 
+interface BatchExportRpcResult {
+  status: "succeeded" | "skipped" | "failed";
+  output_path: string | null;
+  final_filename: string | null;
+  error: string | null;
+}
+
 /**
- * Run the queue sequentially. Each item calls `export_image` with the
- * configured preset / border / watermark / filename template.
+ * Run the queue sequentially. Each item calls the Rust `batch_export_image`
+ * command, which performs filename safety checks, existence reconcile, and
+ * source-vs-destination collision checks atomically. The JS layer only owns
+ * queue state and the proposed filename.
  */
 export async function runBatchExport(): Promise<void> {
   const store = useBatchExportStore.getState();
@@ -142,13 +151,10 @@ export async function runBatchExport(): Promise<void> {
   const ext = fmt === "jpeg" ? "jpg" : fmt;
   const style = useStyleStore.getState().selectedStyle();
 
-  const usedNames = new Set<string>();
-
   let succeeded = 0;
   let failed = 0;
   let skipped = 0;
 
-  // Re-read items each iteration so nothing gets stale
   for (let i = 0; i < store.items.length; i++) {
     const item = useBatchExportStore.getState().items[i];
     if (!item) break;
@@ -158,7 +164,7 @@ export async function runBatchExport(): Promise<void> {
 
     try {
       const baseName = item.imageFilename.replace(/\.[^.]+$/, "");
-      const proposed = applyFilenameTemplate(store.filenameTemplate, {
+      const proposedName = applyFilenameTemplate(store.filenameTemplate, {
         originalName: baseName,
         style: style?.name ?? null,
         preset: store.presetId,
@@ -167,38 +173,36 @@ export async function runBatchExport(): Promise<void> {
         ext,
       });
 
-      const finalName = await reconcileOutputName(
-        store.outputFolder!,
-        proposed,
-        store.overwritePolicy,
-        usedNames
-      );
-
-      // Skipped — same-named file exists and policy is "skip"
-      if (finalName === null) {
-        update(item.id, { status: "skipped" });
-        skipped++;
-        continue;
-      }
-      usedNames.add(finalName);
-
-      const outputPath = joinPath(store.outputFolder!, finalName);
-
-      const borderConfig = buildBorderConfig(store.borderId);
-      const watermarkConfig = buildWatermarkConfig(store.watermark);
-
-      await invoke<string>("export_image", {
-        sourcePath: item.sourceVersionPath,
-        outputPath,
-        format: fmt,
-        quality: preset.quality,
-        maxLongEdge: preset.longEdge,
-        border: borderConfig,
-        watermark: watermarkConfig,
+      const result = await invoke<BatchExportRpcResult>("batch_export_image", {
+        request: {
+          source_path: item.sourceVersionPath,
+          output_dir: store.outputFolder!,
+          filename: proposedName,
+          format: fmt,
+          quality: preset.quality,
+          max_long_edge: preset.longEdge,
+          border: buildBorderConfig(store.borderId),
+          watermark: buildWatermarkConfig(store.watermark),
+          overwrite_policy: store.overwritePolicy,
+        },
       });
 
-      update(item.id, { status: "succeeded", outputPath });
-      succeeded++;
+      if (result.status === "succeeded") {
+        update(item.id, {
+          status: "succeeded",
+          outputPath: result.output_path ?? "",
+        });
+        succeeded++;
+      } else if (result.status === "skipped") {
+        update(item.id, { status: "skipped" });
+        skipped++;
+      } else {
+        update(item.id, {
+          status: "failed",
+          error: result.error ?? "Unknown export error",
+        });
+        failed++;
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       useBatchExportStore.getState().updateItem(item.id, {
@@ -222,67 +226,6 @@ export async function runBatchExport(): Promise<void> {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function joinPath(folder: string, filename: string): string {
-  // Tauri returns Windows or POSIX paths verbatim — preserve the separator.
-  const sep = folder.includes("\\") ? "\\" : "/";
-  if (folder.endsWith("\\") || folder.endsWith("/")) return folder + filename;
-  return folder + sep + filename;
-}
-
-async function reconcileOutputName(
-  folder: string,
-  proposed: string,
-  policy: "skip" | "overwrite" | "rename",
-  usedThisRun: Set<string>
-): Promise<string | null> {
-  if (policy === "overwrite") {
-    return makeUniqueWithinRun(proposed, usedThisRun);
-  }
-
-  // Check disk for existence using a short Tauri fs plugin call
-  const exists = await fileExists(joinPath(folder, proposed));
-  if (!exists) {
-    return makeUniqueWithinRun(proposed, usedThisRun);
-  }
-
-  if (policy === "skip") return null;
-
-  // Rename: append _1, _2, ...
-  const dot = proposed.lastIndexOf(".");
-  const stem = dot >= 0 ? proposed.slice(0, dot) : proposed;
-  const ext = dot >= 0 ? proposed.slice(dot) : "";
-  for (let i = 1; i < 1000; i++) {
-    const candidate = `${stem}_${i}${ext}`;
-    const onDisk = await fileExists(joinPath(folder, candidate));
-    if (!onDisk && !usedThisRun.has(candidate)) return candidate;
-  }
-  return makeUniqueWithinRun(proposed, usedThisRun);
-}
-
-/** When two queue items resolve to the same name in the same run, suffix _2, _3... */
-function makeUniqueWithinRun(name: string, used: Set<string>): string {
-  if (!used.has(name)) return name;
-  const dot = name.lastIndexOf(".");
-  const stem = dot >= 0 ? name.slice(0, dot) : name;
-  const ext = dot >= 0 ? name.slice(dot) : "";
-  for (let i = 2; i < 1000; i++) {
-    const candidate = `${stem}_${i}${ext}`;
-    if (!used.has(candidate)) return candidate;
-  }
-  return name;
-}
-
-async function fileExists(path: string): Promise<boolean> {
-  try {
-    const { exists } = await import("@tauri-apps/plugin-fs");
-    return await exists(path);
-  } catch {
-    // If the plugin isn't available, default to "doesn't exist" so we don't
-    // block the export. The Rust export call will surface any real error.
-    return false;
-  }
-}
 
 function buildBorderConfig(borderId: BorderTemplateId) {
   if (borderId === "none") return null;
