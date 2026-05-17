@@ -79,6 +79,7 @@ export interface TranslationDictionary {
     deleted: string;
     copied: string;
     applied: string;
+    imageGenerated: string;
   };
   errors: {
     generic: string;
@@ -104,6 +105,7 @@ export interface TranslationDictionary {
       apiKeyPlaceholderEmpty: string;
       apiKeyPlaceholderSaved: string;
       clearKey: string;
+      clearKeyConfirm: string;
       modelsHeading: string;
       imageModel: string;
       textModel: string;
@@ -115,6 +117,8 @@ export interface TranslationDictionary {
       validating: string;
       connectionSuccess: string;
       keyHelp: string;
+      saveBeforeValidateFailed: string;
+      saveKeyBeforeValidateFailed: string;
     };
     editing: {
       heading: string;
@@ -244,6 +248,30 @@ export interface TranslationDictionary {
     download: string;
     apiKeyMissing: string;
     openPromptCenter: string;
+    sizes: {
+      square: string;
+      wide: string;
+      tall: string;
+      auto: string;
+    };
+    qualities: {
+      standard: string;
+      hd: string;
+      auto: string;
+    };
+    shortcutHint: string;
+    quickPrompts: string;
+    galleryGenerating: string;
+    galleryEmptyHint: string;
+    preview: {
+      noImage: string;
+      noImageHint: string;
+      loading: string;
+      exportPng: string;
+      exporting: string;
+      exportSuccess: string;
+      exportFailed: string;
+    };
   };
 
   // ─── Style ────────────────────────────────────────────────────────────
@@ -419,6 +447,12 @@ export interface TranslationDictionary {
       exportingButton: string;
       emptyFavorites: string;
       emptyImages: string;
+      // Toasts and inline status messages
+      pickFolderFirst: string;
+      nothingToExport: string;
+      doneAllOk: string; // "Exported {count} files."
+      doneSummary: string; // "Batch export done: {ok} ok, {failed} failed, {skipped} skipped"
+      unknownPreset: string; // "Unknown export preset: {id}"
     };
   };
 
@@ -480,5 +514,7 @@ export interface TranslationDictionary {
     };
     save: string;
     replaceConfirm: string;
+    validationRequired: string;
+    unknownExportError: string;
   };
 }

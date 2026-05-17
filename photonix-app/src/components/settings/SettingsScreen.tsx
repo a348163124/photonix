@@ -102,9 +102,7 @@ export function SettingsScreen() {
 
   async function handleClearApiKey() {
     if (!isTauri()) return;
-    const ok = window.confirm(
-      "Remove the saved API key from this computer's secret store?"
-    );
+    const ok = window.confirm(t("settings.provider.clearKeyConfirm"));
     if (!ok) return;
     await saveApiKey(""); // empty string deletes the entry
     setApiKeyDraft("");
@@ -124,7 +122,9 @@ export function SettingsScreen() {
       await persistProviderConfig();
     } catch (err) {
       setValidationResult(
-        `Failed to save settings before validating: ${err instanceof Error ? err.message : String(err)}`
+        t("settings.provider.saveBeforeValidateFailed", {
+          error: err instanceof Error ? err.message : String(err),
+        })
       );
       setValidating(false);
       return;
@@ -139,7 +139,9 @@ export function SettingsScreen() {
         useSettingsStore.getState().setHasApiKey(true);
       } catch (err) {
         setValidationResult(
-          `Failed to save key before validating: ${err instanceof Error ? err.message : String(err)}`
+          t("settings.provider.saveKeyBeforeValidateFailed", {
+            error: err instanceof Error ? err.message : String(err),
+          })
         );
         setValidating(false);
         return;
@@ -150,7 +152,7 @@ export function SettingsScreen() {
     if (result.error) {
       setValidationResult(result.error);
     } else if (result.connected) {
-      setValidationResult("Connection successful");
+      setValidationResult(t("settings.provider.connectionSuccess"));
       setValidationWarnings(result.warnings);
     }
     setValidating(false);
@@ -327,7 +329,6 @@ function ProviderSection({
       {validationResult && (
         <p
           className={`text-xs ${
-            validationResult.startsWith("Connection") ||
             validationResult === t("settings.provider.connectionSuccess")
               ? "text-green-400"
               : "text-red-400"

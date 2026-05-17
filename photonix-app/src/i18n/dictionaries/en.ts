@@ -63,6 +63,7 @@ const en: TranslationDictionary = {
     deleted: "Deleted",
     copied: "Copied to clipboard",
     applied: "Applied",
+    imageGenerated: "Image generated",
   },
   errors: {
     generic: "Something went wrong.",
@@ -87,6 +88,8 @@ const en: TranslationDictionary = {
       apiKeyPlaceholderEmpty: "sk-...",
       apiKeyPlaceholderSaved: "•••••••• (already saved — type to replace)",
       clearKey: "Clear saved key",
+      clearKeyConfirm:
+        "Remove the saved API key from this computer's secret store?",
       modelsHeading: "Models",
       imageModel: "Image Model",
       textModel: "Text Model (Prompt Compiler)",
@@ -100,6 +103,10 @@ const en: TranslationDictionary = {
       connectionSuccess: "Connection successful",
       keyHelp:
         "Your API key is stored in the Windows Credential Manager (or your platform's equivalent secret store). It is never written to the database, never logged, and is read only by the native layer when an edit, generation, or validation request needs it.",
+      saveBeforeValidateFailed:
+        "Failed to save settings before validating: {error}",
+      saveKeyBeforeValidateFailed:
+        "Failed to save key before validating: {error}",
     },
     editing: {
       heading: "Editing",
@@ -229,6 +236,21 @@ const en: TranslationDictionary = {
     download: "Download",
     apiKeyMissing: "Configure your API key in Settings first.",
     openPromptCenter: "Open Prompt Center",
+    sizes: { square: "Square", wide: "Wide", tall: "Tall", auto: "Auto" },
+    qualities: { standard: "Standard", hd: "HD", auto: "Auto" },
+    shortcutHint: "Tip: Ctrl/Cmd + Enter to generate",
+    quickPrompts: "Quick Prompts",
+    galleryGenerating: "Generating…",
+    galleryEmptyHint: "Generated images will appear here",
+    preview: {
+      noImage: "No image selected",
+      noImageHint: "Generate a new image, or pick one from the gallery below.",
+      loading: "Loading…",
+      exportPng: "Export PNG",
+      exporting: "Exporting…",
+      exportSuccess: "Exported to: {path}",
+      exportFailed: "Export failed: {error}",
+    },
   },
 
   style: {
@@ -398,6 +420,12 @@ const en: TranslationDictionary = {
       emptyFavorites:
         "No favorited candidates yet. Star one in the editor first.",
       emptyImages: "No images selected. Pick images in Library or run on all.",
+      pickFolderFirst: "Pick an output folder first.",
+      nothingToExport: "Nothing to export. Try a different selection mode.",
+      doneAllOk: "Exported {count} files.",
+      doneSummary:
+        "Batch export done: {ok} ok, {failed} failed, {skipped} skipped",
+      unknownPreset: "Unknown export preset: {id}",
     },
   },
 
@@ -455,6 +483,8 @@ const en: TranslationDictionary = {
     save: "Save",
     replaceConfirm:
       "The prompt box already has text. Replace it with this template?",
+    validationRequired: "Title and prompt are required.",
+    unknownExportError: "Unknown export error",
   },
 };
 

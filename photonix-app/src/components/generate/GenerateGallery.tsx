@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useGenerateStore } from "@/stores/generateStore";
 import { isTauri } from "@/services/tauri/invoke";
 import { deleteGeneratedImage } from "@/services/tauri/generate";
+import { useTranslation } from "@/i18n";
 import type { GeneratedImage } from "@/types";
 
 export function GenerateGallery() {
+  const { t } = useTranslation();
   const images = useGenerateStore((s) => s.images);
   const selectedId = useGenerateStore((s) => s.selectedId);
   const selectImage = useGenerateStore((s) => s.selectImage);
@@ -25,7 +27,7 @@ export function GenerateGallery() {
     return (
       <div className="flex h-full items-center justify-center border-t border-neutral-800 bg-neutral-900/40">
         <p className="text-xs text-neutral-600">
-          Generated images will appear here
+          {t("generate.galleryEmptyHint")}
         </p>
       </div>
     );
@@ -36,7 +38,7 @@ export function GenerateGallery() {
       <div className="flex h-full gap-2">
         {isGenerating && (
           <div className="aspect-square h-full shrink-0 animate-pulse rounded-lg border border-neutral-800 bg-neutral-800/60 flex items-center justify-center">
-            <span className="text-[10px] text-neutral-500">Generating...</span>
+            <span className="text-[10px] text-neutral-500">{t("generate.galleryGenerating")}</span>
           </div>
         )}
         {images.map((img) => (

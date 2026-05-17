@@ -13,6 +13,7 @@ import { getVersions } from "@/services/tauri/versions";
 import { invoke, isTauri } from "@/services/tauri/invoke";
 import { applyFilenameTemplate } from "@/services/export/filenameTemplate";
 import { toast } from "@/components/ui/Toast";
+import { getT } from "@/i18n";
 import {
   BORDER_TEMPLATES,
   EXPORT_PRESETS,
@@ -127,14 +128,15 @@ interface BatchExportRpcResult {
  * queue state and the proposed filename.
  */
 export async function runBatchExport(): Promise<void> {
+  const t = getT();
   const store = useBatchExportStore.getState();
   if (store.isRunning) return;
   if (!isTauri()) {
-    toast("Batch export requires the desktop app.", "error");
+    toast(t("errors.desktopOnly"), "error");
     return;
   }
   if (!store.outputFolder) {
-    toast("Pick an output folder first.", "info");
+    toast(t("batch.export.pickFolderFirst"), "info");
     return;
   }
 
@@ -142,7 +144,7 @@ export async function runBatchExport(): Promise<void> {
 
   const preset = EXPORT_PRESETS.find((p) => p.id === store.presetId);
   if (!preset) {
-    toast(`Unknown export preset: ${store.presetId}`, "error");
+    toast(t("batch.export.unknownPreset", { id: store.presetId }), "error");
     store.setRunning(false);
     return;
   }
@@ -199,7 +201,7 @@ export async function runBatchExport(): Promise<void> {
       } else {
         update(item.id, {
           status: "failed",
-          error: result.error ?? "Unknown export error",
+          error: result.error ?? t("promptCenter.unknownExportError"),
         });
         failed++;
       }
@@ -216,10 +218,10 @@ export async function runBatchExport(): Promise<void> {
   store.setRunning(false);
 
   if (failed === 0 && skipped === 0) {
-    toast(`Exported ${succeeded} files.`, "success");
+    toast(t("batch.export.doneAllOk", { count: succeeded }), "success");
   } else {
     toast(
-      `Batch export done: ${succeeded} ok, ${failed} failed, ${skipped} skipped`,
+      t("batch.export.doneSummary", { ok: succeeded, failed, skipped }),
       failed > 0 ? "info" : "success"
     );
   }

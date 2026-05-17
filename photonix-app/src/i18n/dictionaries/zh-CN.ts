@@ -63,6 +63,7 @@ const zhCN: TranslationDictionary = {
     deleted: "已删除",
     copied: "已复制到剪贴板",
     applied: "已应用",
+    imageGenerated: "已生成图片",
   },
   errors: {
     generic: "发生错误。",
@@ -87,6 +88,7 @@ const zhCN: TranslationDictionary = {
       apiKeyPlaceholderEmpty: "sk-...",
       apiKeyPlaceholderSaved: "•••••••• (已保存,输入新值可替换)",
       clearKey: "清除已保存的 Key",
+      clearKeyConfirm: "确定要从本机的安全存储中移除已保存的 API Key 吗?",
       modelsHeading: "模型",
       imageModel: "图像模型",
       textModel: "文本模型 (提示词编译)",
@@ -100,6 +102,8 @@ const zhCN: TranslationDictionary = {
       connectionSuccess: "连接成功",
       keyHelp:
         "API Key 保存在 Windows 凭据管理器(或对应平台的安全存储)中。它不会写入数据库,不会出现在日志中,只有原生层在执行修图、生图或验证请求时才会读取。",
+      saveBeforeValidateFailed: "测试前保存设置失败:{error}",
+      saveKeyBeforeValidateFailed: "测试前保存 API Key 失败:{error}",
     },
     editing: {
       heading: "修图",
@@ -227,6 +231,21 @@ const zhCN: TranslationDictionary = {
     download: "下载",
     apiKeyMissing: "请先在设置中配置 API Key。",
     openPromptCenter: "打开提示词中心",
+    sizes: { square: "方形", wide: "横版", tall: "竖版", auto: "自动" },
+    qualities: { standard: "标准", hd: "高清", auto: "自动" },
+    shortcutHint: "提示:Ctrl/Cmd + Enter 直接生成",
+    quickPrompts: "快速提示词",
+    galleryGenerating: "生成中…",
+    galleryEmptyHint: "生成后的图片会出现在这里",
+    preview: {
+      noImage: "尚未选择图片",
+      noImageHint: "生成一张新图,或从下方图库中挑选。",
+      loading: "加载中…",
+      exportPng: "导出 PNG",
+      exporting: "导出中…",
+      exportSuccess: "已导出到:{path}",
+      exportFailed: "导出失败:{error}",
+    },
   },
 
   style: {
@@ -394,6 +413,11 @@ const zhCN: TranslationDictionary = {
       exportingButton: "导出中…",
       emptyFavorites: "尚无收藏的候选。先在编辑器里收藏一个候选。",
       emptyImages: "未选择图片。请在图库中选择,或对全部图片执行。",
+      pickFolderFirst: "请先选择输出文件夹。",
+      nothingToExport: "没有可导出的内容。换一种来源试试。",
+      doneAllOk: "已导出 {count} 个文件。",
+      doneSummary: "批量导出完成:成功 {ok} · 失败 {failed} · 跳过 {skipped}",
+      unknownPreset: "未知的导出预设:{id}",
     },
   },
 
@@ -450,6 +474,8 @@ const zhCN: TranslationDictionary = {
     },
     save: "保存",
     replaceConfirm: "提示词框已经有内容。是否用此模板替换?",
+    validationRequired: "标题和提示词不能为空。",
+    unknownExportError: "未知的导出错误",
   },
 };
 

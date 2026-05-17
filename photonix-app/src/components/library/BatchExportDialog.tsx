@@ -79,11 +79,11 @@ export function BatchExportDialog() {
 
   function handleStart() {
     if (items.length === 0) {
-      toast("Nothing to export. Try a different selection mode.", "info");
+      toast(t("batch.export.nothingToExport"), "info");
       return;
     }
     if (!outputFolder) {
-      toast("Pick an output folder first.", "info");
+      toast(t("batch.export.pickFolderFirst"), "info");
       return;
     }
     void runBatchExport();

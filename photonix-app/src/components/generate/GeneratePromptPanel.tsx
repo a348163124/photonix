@@ -7,17 +7,17 @@ import { toast } from "@/components/ui/Toast";
 import { useTranslation } from "@/i18n";
 import type { GenerationQuality, GenerationSize } from "@/types";
 
-const SIZES: { value: GenerationSize; label: string }[] = [
-  { value: "1024x1024", label: "Square" },
-  { value: "1792x1024", label: "Wide" },
-  { value: "1024x1792", label: "Tall" },
-  { value: "auto", label: "Auto" },
+const SIZE_OPTIONS: { value: GenerationSize; tKey: string }[] = [
+  { value: "1024x1024", tKey: "generate.sizes.square" },
+  { value: "1792x1024", tKey: "generate.sizes.wide" },
+  { value: "1024x1792", tKey: "generate.sizes.tall" },
+  { value: "auto", tKey: "generate.sizes.auto" },
 ];
 
-const QUALITIES: { value: GenerationQuality; label: string }[] = [
-  { value: "standard", label: "Standard" },
-  { value: "hd", label: "HD" },
-  { value: "auto", label: "Auto" },
+const QUALITY_OPTIONS: { value: GenerationQuality; tKey: string }[] = [
+  { value: "standard", tKey: "generate.qualities.standard" },
+  { value: "hd", tKey: "generate.qualities.hd" },
+  { value: "auto", tKey: "generate.qualities.auto" },
 ];
 
 const QUICK_PROMPTS = [
@@ -78,7 +78,7 @@ export function GeneratePromptPanel() {
 
       if (result.image) {
         prependImage(result.image);
-        toast(t("toast.saved"), "success");
+        toast(t("toast.imageGenerated"), "success");
       }
     } catch (err) {
       const msg =
@@ -137,7 +137,7 @@ export function GeneratePromptPanel() {
               className="w-full resize-none rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
             />
             <p className="mt-1 text-[9px] text-neutral-600">
-              Tip: Ctrl/Cmd + Enter
+              {t("generate.shortcutHint")}
             </p>
           </div>
 
@@ -147,7 +147,7 @@ export function GeneratePromptPanel() {
               {t("generate.sizeLabel")}
             </label>
             <div className="grid grid-cols-2 gap-1">
-              {SIZES.map((s) => (
+              {SIZE_OPTIONS.map((s) => (
                 <button
                   key={s.value}
                   onClick={() => setSize(s.value)}
@@ -157,7 +157,7 @@ export function GeneratePromptPanel() {
                       : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                   }`}
                 >
-                  {s.label}
+                  {t(s.tKey)}
                   <span className="ml-1 text-[9px] opacity-60">{s.value}</span>
                 </button>
               ))}
@@ -170,7 +170,7 @@ export function GeneratePromptPanel() {
               {t("generate.qualityLabel")}
             </label>
             <div className="flex gap-1">
-              {QUALITIES.map((q) => (
+              {QUALITY_OPTIONS.map((q) => (
                 <button
                   key={q.value}
                   onClick={() => setQuality(q.value)}
@@ -180,7 +180,7 @@ export function GeneratePromptPanel() {
                       : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                   }`}
                 >
-                  {q.label}
+                  {t(q.tKey)}
                 </button>
               ))}
             </div>
@@ -202,7 +202,7 @@ export function GeneratePromptPanel() {
               examples for English generation, not UI chrome. */}
           <div className="border-t border-neutral-800 pt-3">
             <label className="mb-1.5 block text-[11px] text-neutral-400">
-              Quick Prompts
+              {t("generate.quickPrompts")}
             </label>
             <div className="flex flex-col gap-1">
               {QUICK_PROMPTS.map((p, i) => (

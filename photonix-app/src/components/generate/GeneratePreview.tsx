@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { isTauri } from "@/services/tauri/invoke";
 import { invoke } from "@/services/tauri/invoke";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import type { GeneratedImage } from "@/types";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function GeneratePreview({ image }: Props) {
+  const { t } = useTranslation();
   const [src, setSrc] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
@@ -43,15 +45,15 @@ export function GeneratePreview({ image }: Props) {
         quality: 100,
         maxLongEdge: null,
       });
-      toast(`Exported to: ${savePath}`, "success");
+      toast(t("generate.preview.exportSuccess", { path: savePath }), "success");
     } catch (err) {
       const msg =
         err instanceof Error
           ? err.message
           : typeof err === "string"
             ? err
-            : "Export failed";
-      toast(`Export failed: ${msg}`, "error");
+            : t("errors.generic");
+      toast(t("generate.preview.exportFailed", { error: msg }), "error");
     } finally {
       setExporting(false);
     }
@@ -61,9 +63,9 @@ export function GeneratePreview({ image }: Props) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-neutral-400">No image selected</p>
+          <p className="text-sm text-neutral-400">{t("generate.preview.noImage")}</p>
           <p className="mt-1 text-xs text-neutral-600">
-            Generate a new image, or pick one from the gallery below.
+            {t("generate.preview.noImageHint")}
           </p>
         </div>
       </div>
@@ -85,7 +87,7 @@ export function GeneratePreview({ image }: Props) {
           disabled={exporting}
           className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-500 transition-colors disabled:opacity-50"
         >
-          {exporting ? "Exporting..." : "Export PNG"}
+          {exporting ? t("generate.preview.exporting") : t("generate.preview.exportPng")}
         </button>
       </div>
 
@@ -98,7 +100,7 @@ export function GeneratePreview({ image }: Props) {
             className="max-h-full max-w-full object-contain rounded"
           />
         ) : (
-          <div className="text-neutral-600 text-sm">Loading...</div>
+          <div className="text-neutral-600 text-sm">{t("generate.preview.loading")}</div>
         )}
       </div>
     </div>

@@ -152,7 +152,7 @@ export function PromptCenterScreen() {
   async function saveDraft() {
     if (!editingDraft) return;
     if (!editingDraft.title.trim() || !editingDraft.prompt.trim()) {
-      toast("Title and prompt are required.", "info");
+      toast(t("promptCenter.validationRequired"), "info");
       return;
     }
     const next: PromptTemplate = {
