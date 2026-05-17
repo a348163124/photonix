@@ -1,0 +1,85 @@
+name: Bug report
+description: Something is broken or not working as expected.
+title: "bug: <short summary>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. The more concrete you can be, the faster it gets fixed.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I clicked Export with the Archive PNG preset, the dialog opened but...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal reliable repro steps.
+      placeholder: |
+        1. Import folder X
+        2. Open image Y
+        3. Switch to Mask tab and paint a region
+        4. Click Generate Draft
+        5. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or logs
+      description: Drag images or attach text logs. Redact API keys and personal paths.
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Photonix version / commit
+      description: Output of `git rev-parse HEAD` if you built from source, or app version from About if available.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (not officially supported yet)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: provider
+    attributes:
+      label: Provider / models
+      description: Provider base URL host (e.g. api.openai.com), and the image/text model names you have configured. No keys.
+    validations:
+      required: false
+
+  - type: textarea
+    id: image-info
+    attributes:
+      label: Source image details
+      description: If the bug is image-specific, share rough info — size in MB, dimensions, format. No need to upload the file.
+      placeholder: 36MB PNG, 7728x5152
+    validations:
+      required: false
