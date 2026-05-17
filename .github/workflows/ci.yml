@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (typecheck + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: photonix-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: photonix-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Vite build
+        run: npx vite build
+
+  rust:
+    name: Rust (cargo check)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: photonix-app/src-tauri
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry & build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            photonix-app/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('photonix-app/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # Tauri build.rs needs the frontend dist folder. We don't run a real
+      # tauri build here, just cargo check, but tauri-build still asks for
+      # the frontendDist path to exist. Create a placeholder dist folder.
+      - name: Stub frontend dist
+        shell: pwsh
+        working-directory: photonix-app
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          New-Item -ItemType File -Force -Path dist/index.html | Out-Null
+
+      - name: cargo check
+        run: cargo check --no-default-features

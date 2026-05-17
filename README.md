@@ -2,6 +2,12 @@
 
 > Shape light. Repair detail. Direct the image.
 
+[![CI](https://github.com/a348163124/photonix/actions/workflows/ci.yml/badge.svg)](https://github.com/a348163124/photonix/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=white)](https://tauri.app)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Rust](https://img.shields.io/badge/Rust-stable-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
+
 A Windows-first AI photo editor built around `gpt-image-2`, designed for photographers who want fast, prompt-driven edits on large landscape PNG/JPG photos with predictable, local-first workflows.
 
 Photonix is a desktop application — your originals stay on disk, your API key stays on your machine, and edits go directly from the desktop to the provider you configure.
@@ -21,6 +27,20 @@ Photonix is a desktop application — your originals stay on disk, your API key 
 - **Small batch queue** — multi-select in Library, run one preset over several photos with retry/cancel per item
 - **Version history** — every accepted edit becomes a version; switch between draft/final/stitched/original; original files are never modified
 - **Local-first storage** — SQLite for metadata; disk for thumbnails, proxies, masks, generations, and edited versions; secrets in a separate file outside the database
+
+---
+
+## Screenshots
+
+> Coming soon. Add your own captures into `docs/screenshots/` and reference them here.
+
+| Library | Editor |
+|---|---|
+| ![Library](docs/screenshots/library.png) | ![Editor](docs/screenshots/editor.png) |
+
+| Generate | Settings |
+|---|---|
+| ![Generate](docs/screenshots/generate.png) | ![Settings](docs/screenshots/settings.png) |
 
 ---
 
@@ -172,4 +192,4 @@ See the design document for the full scope and roadmap:
 
 ## License
 
-Currently unlicensed (private development). A formal license will be added before any public release.
+Released under the [MIT License](./LICENSE).
