@@ -20,8 +20,8 @@ export function HistoryPanel() {
   if (versions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-2">
-        <p className="text-xs text-neutral-500">{t("editor.history.empty")}</p>
-        <p className="text-[10px] text-neutral-600 text-center">
+        <p className="text-xs" style={{ color: "var(--muted)" }}>{t("editor.history.empty")}</p>
+        <p className="text-[10px] text-center" style={{ color: "var(--muted-2)" }}>
           {t("editor.history.emptyHint")}
         </p>
       </div>
@@ -38,30 +38,31 @@ export function HistoryPanel() {
 
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-[10px] text-neutral-500 mb-2">
+      <p className="text-[10px] mb-2" style={{ color: "var(--muted)" }}>
         {t("editor.history.versionsCount", { count: versions.length })}
       </p>
       {versions.map((v) => (
         <button
           key={v.id}
           onClick={() => setActiveVersion(v.id)}
-          className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
-            activeVersionId === v.id
-              ? "bg-neutral-700 text-neutral-200 ring-1 ring-blue-500/50"
-              : "text-neutral-400 hover:bg-neutral-800"
-          }`}
+          className="flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+          style={{
+            background: activeVersionId === v.id ? "var(--accent-soft)" : "transparent",
+            border: activeVersionId === v.id ? "1px solid var(--accent)" : "1px solid transparent",
+            color: activeVersionId === v.id ? "var(--accent-strong)" : "var(--muted)",
+          }}
         >
           <VersionIcon kind={v.versionKind} />
           <div className="flex-1 min-w-0">
-            <span className="capitalize block truncate">
+            <span className="capitalize block truncate" style={{ color: activeVersionId === v.id ? "var(--accent-strong)" : "var(--fg)" }}>
               {KIND_LABELS[v.versionKind] ?? v.versionKind}
             </span>
-            <span className="text-[9px] text-neutral-600">
+            <span className="text-[9px]" style={{ color: "var(--muted-2)" }}>
               {v.width}×{v.height}
             </span>
           </div>
           {v.isCurrent && (
-            <span className="text-[9px] text-green-500 shrink-0">
+            <span className="text-[9px] shrink-0" style={{ color: "var(--accent-strong)" }}>
               {t("editor.history.currentBadge")}
             </span>
           )}

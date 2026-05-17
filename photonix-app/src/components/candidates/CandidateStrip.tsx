@@ -14,7 +14,6 @@ export function CandidateStrip() {
   const isRunning = useCandidateStore((s) => s.isRunning);
   const setForImage = useCandidateStore((s) => s.setForImage);
 
-  // Load candidates when the selected image changes
   useEffect(() => {
     if (!selectedImageId || !isTauri()) return;
     listCandidatesForImage(selectedImageId)
@@ -26,17 +25,18 @@ export function CandidateStrip() {
 
   const list = byImage[selectedImageId] ?? [];
 
-  // Hide the strip entirely when nothing to show and not currently running
   if (list.length === 0 && runItems.length === 0 && !isRunning) {
     return null;
   }
 
   return (
-    <div className="border-t border-neutral-800 bg-neutral-900/50">
+    <div style={{ borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
       <div className="flex items-center justify-between px-3 py-1">
-        <span className="text-[11px] text-neutral-400">{t("editor.candidates.heading")}</span>
+        <span className="text-[11px]" style={{ color: "var(--muted)" }}>
+          {t("editor.candidates.heading")}
+        </span>
         {isRunning && (
-          <span className="text-[10px] text-amber-400">
+          <span className="text-[10px]" style={{ color: "oklch(45% 0.16 70)" }}>
             {t("editor.candidates.runningSummary", {
               remaining: runItems.filter(
                 (it) => it.status === "running" || it.status === "queued"
@@ -47,35 +47,48 @@ export function CandidateStrip() {
         )}
       </div>
       <div className="flex gap-2 overflow-x-auto px-3 pb-2 pt-1">
-        {/* Pending/running run items */}
         {runItems
           .filter((it) => it.status !== "succeeded")
           .map((it) => (
             <div
               key={it.id}
-              className="flex shrink-0 flex-col items-center justify-center gap-1 rounded border border-neutral-800 bg-neutral-900 p-1 text-center"
-              style={{ width: 120, height: 124 }}
+              className="flex shrink-0 flex-col items-center justify-center gap-1 rounded p-1 text-center"
+              style={{
+                width: 120,
+                height: 124,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+              }}
             >
               <div
-                className={`mb-1 h-10 w-10 rounded-full ${
-                  it.status === "running"
-                    ? "animate-pulse bg-amber-500/40"
-                    : it.status === "failed"
-                      ? "bg-red-700/60"
-                      : "bg-neutral-700"
-                }`}
+                className={`mb-1 h-10 w-10 rounded-full ${it.status === "running" ? "animate-pulse" : ""}`}
+                style={{
+                  background:
+                    it.status === "running"
+                      ? "oklch(85% 0.08 70)"
+                      : it.status === "failed"
+                        ? "oklch(92% 0.05 25)"
+                        : "var(--surface-2)",
+                }}
               />
-              <div className="text-[10px] text-neutral-300">{it.label}</div>
-              <div className="text-[9px] text-neutral-500 capitalize">{it.status}</div>
+              <div className="text-[10px]" style={{ color: "var(--fg)" }}>
+                {it.label}
+              </div>
+              <div className="text-[9px] capitalize" style={{ color: "var(--muted)" }}>
+                {it.status}
+              </div>
               {it.error && (
-                <div className="line-clamp-2 text-[9px] text-red-400" title={it.error}>
+                <div
+                  className="line-clamp-2 text-[9px]"
+                  style={{ color: "var(--danger)" }}
+                  title={it.error}
+                >
                   {it.error}
                 </div>
               )}
             </div>
           ))}
 
-        {/* Persisted candidates */}
         {list.map((c) => (
           <CandidateCard key={c.id} candidate={c} imageId={selectedImageId} />
         ))}

@@ -155,8 +155,8 @@ export function ReferenceStyleAnalyzer({
               ).map((hex) => (
                 <div
                   key={hex}
-                  className="h-6 w-6 rounded border border-neutral-700"
-                  style={{ backgroundColor: hex }}
+                  className="h-6 w-6 rounded"
+                  style={{ backgroundColor: hex, border: "1px solid var(--border)" }}
                   title={hex}
                 />
               ))}

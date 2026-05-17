@@ -7,6 +7,7 @@ import {
 } from "@/services/tauri/candidates";
 import { isTauri } from "@/services/tauri/invoke";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import type { EditCandidate } from "@/types";
 
 export function CandidateCard({
@@ -16,6 +17,7 @@ export function CandidateCard({
   candidate: EditCandidate;
   imageId: string;
 }) {
+  const { t } = useTranslation();
   const versions = useAppStore((s) => s.currentVersions);
   const activeVersionId = useAppStore((s) => s.activeVersionId);
   const setActiveVersion = useAppStore((s) => s.setActiveVersion);
@@ -44,7 +46,6 @@ export function CandidateCard({
     try {
       await setCandidateFavorite(candidate.id, next);
     } catch (err) {
-      // Revert on failure
       updateForImage(imageId, candidate.id, { isFavorite: candidate.isFavorite });
       toast(err instanceof Error ? err.message : String(err), "error");
     }
@@ -53,11 +54,11 @@ export function CandidateCard({
   async function makeCurrent() {
     if (!candidate.versionId) return;
     setActiveVersion(candidate.versionId);
-    toast(`Showing "${candidate.label}"`, "info", 1500);
+    toast(candidate.label, "info", 1500);
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete candidate "${candidate.label}"?`)) return;
+    if (!confirm(t("promptCenter.confirmDelete", { title: candidate.label }))) return;
     removeForImage(imageId, candidate.id);
     try {
       await deleteCandidate(candidate.id);
@@ -70,17 +71,21 @@ export function CandidateCard({
 
   return (
     <div
-      className={`group relative flex shrink-0 flex-col gap-1 rounded border p-1 transition-colors ${
-        isActive
-          ? "border-blue-500 bg-blue-600/10"
-          : "border-neutral-800 bg-neutral-900 hover:border-neutral-700"
-      }`}
-      style={{ width: 120 }}
+      className="group relative flex shrink-0 flex-col gap-1 rounded p-1 transition-colors"
+      style={{
+        width: 120,
+        background: "var(--surface)",
+        border: isActive
+          ? "2px solid var(--accent)"
+          : "1px solid var(--border)",
+        boxShadow: isActive ? "0 0 0 2px var(--accent-soft)" : undefined,
+      }}
     >
       <button
         onClick={makeCurrent}
-        className="block h-20 w-full overflow-hidden rounded bg-neutral-800"
-        title={`Show: ${candidate.label}`}
+        className="block h-20 w-full overflow-hidden rounded"
+        style={{ background: "var(--bg)" }}
+        title={`${t("editor.candidates.show")}: ${candidate.label}`}
       >
         {thumbSrc ? (
           <img
@@ -89,14 +94,18 @@ export function CandidateCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[9px] text-neutral-500">
-            no preview
+          <div
+            className="flex h-full w-full items-center justify-center text-[9px]"
+            style={{ color: "var(--muted-2)" }}
+          >
+            —
           </div>
         )}
       </button>
       <div className="flex items-center gap-1">
         <span
-          className="flex-1 truncate text-[10px] text-neutral-300"
+          className="flex-1 truncate text-[10px]"
+          style={{ color: "var(--fg)" }}
           title={candidate.label}
         >
           {candidate.label}
@@ -104,22 +113,21 @@ export function CandidateCard({
         <button
           onClick={toggleFavorite}
           className="text-[10px]"
-          title="Favorite"
+          style={{ color: candidate.isFavorite ? "var(--accent)" : "var(--muted-2)" }}
+          title={t("common.favorite")}
         >
           {candidate.isFavorite ? "★" : "☆"}
         </button>
       </div>
       <div className="flex items-center gap-1">
-        <button
-          onClick={makeCurrent}
-          className="flex-1 rounded bg-neutral-800 px-1 py-0.5 text-[9px] text-neutral-300 hover:bg-neutral-700"
-        >
-          Show
+        <button onClick={makeCurrent} className="px-btn flex-1" style={{ padding: "2px 6px", fontSize: 9 }}>
+          {t("editor.candidates.show")}
         </button>
         <button
           onClick={handleDelete}
-          className="rounded bg-neutral-800 px-1 py-0.5 text-[9px] text-neutral-500 hover:bg-red-700 hover:text-white"
-          title="Delete candidate"
+          className="px-btn px-btn-danger"
+          style={{ padding: "2px 6px", fontSize: 9 }}
+          title={t("common.delete")}
         >
           ×
         </button>

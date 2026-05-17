@@ -59,7 +59,7 @@ export function EditorScreen() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-neutral-400">{t("editor.noImage")}</p>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t("editor.noImage")}</p>
           <button
             onClick={() => setView("library")}
             className="mt-2 text-xs text-blue-400 hover:underline"
