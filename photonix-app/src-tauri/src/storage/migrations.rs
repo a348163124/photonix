@@ -23,6 +23,7 @@ pub fn run(conn: &Connection) -> Result<(), String> {
         (2, MIGRATION_002_GENERATED_IMAGES),
         (3, MIGRATION_003_PROMPT_HISTORY_AND_PRESETS),
         (4, MIGRATION_004_STYLE_AND_CANDIDATES),
+        (5, MIGRATION_005_PROMPT_TEMPLATES),
     ];
 
     for (version, sql) in migrations {
@@ -224,4 +225,28 @@ CREATE TABLE IF NOT EXISTS export_templates (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+"#;
+
+const MIGRATION_005_PROMPT_TEMPLATES: &str = r#"
+CREATE TABLE IF NOT EXISTS prompt_templates (
+    id TEXT PRIMARY KEY,
+    mode TEXT NOT NULL,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    prompt TEXT NOT NULL,
+    negative_prompt TEXT,
+    tags_json TEXT,
+    language TEXT NOT NULL DEFAULT 'en',
+    source_name TEXT,
+    source_url TEXT,
+    is_builtin INTEGER NOT NULL DEFAULT 0,
+    is_favorite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_mode ON prompt_templates(mode);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_category ON prompt_templates(category);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_favorite ON prompt_templates(is_favorite);
 "#;

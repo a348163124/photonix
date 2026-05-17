@@ -8,12 +8,14 @@ import { isTauri } from "@/services/tauri/invoke";
 import { BatchDialog } from "./BatchDialog";
 import { BatchExportDialog } from "./BatchExportDialog";
 import { useBatchExportStore } from "@/stores/batchExportStore";
+import { useTranslation } from "@/i18n";
 import type { ImageAsset } from "@/types";
 
 const THUMBNAIL_BATCH_SIZE = 50;
 const THUMBNAIL_CONCURRENCY = 2;
 
 export function LibraryScreen() {
+  const { t } = useTranslation();
   const images = useAppStore((s) => s.images);
   const setImages = useAppStore((s) => s.setImages);
   const selectImage = useAppStore((s) => s.selectImage);
@@ -167,13 +169,13 @@ export function LibraryScreen() {
           onClick={handleImport}
           className="rounded bg-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-600 transition-colors"
         >
-          Import Folder
+          {t("library.importFolder")}
         </button>
         <button
           onClick={loadImages}
           className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
         >
-          Refresh
+          {t("common.refresh")}
         </button>
         <button
           onClick={toggleSelectMode}
@@ -183,7 +185,7 @@ export function LibraryScreen() {
               : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
           }`}
         >
-          {selectMode ? "Cancel Select" : "Select"}
+          {selectMode ? t("library.cancelSelectMode") : t("library.selectMode")}
         </button>
         {selectMode && (
           <>
@@ -191,27 +193,27 @@ export function LibraryScreen() {
               onClick={selectAllVisible}
               className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
             >
-              Select All
+              {t("library.selectAll")}
             </button>
             <button
               onClick={clearSelection}
               className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
             >
-              Clear
+              {t("common.clear")}
             </button>
             <button
               onClick={openBatchDialog}
               disabled={selectedIds.size === 0}
               className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-500 transition-colors disabled:opacity-40"
             >
-              Batch Edit ({selectedIds.size})
+              {t("library.batchEditCount", { count: selectedIds.size })}
             </button>
             <button
               onClick={openBatchExportDialog}
               className="rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-500 transition-colors"
-              title="Export selected images, or all favorited candidates"
+              title={t("library.batchExport")}
             >
-              Batch Export
+              {t("library.batchExport")}
             </button>
           </>
         )}
@@ -219,14 +221,16 @@ export function LibraryScreen() {
           <button
             onClick={openBatchExportDialog}
             className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
-            title="Export current versions or all favorited candidates"
+            title={t("library.batchExport")}
           >
-            Batch Export
+            {t("library.batchExport")}
           </button>
         )}
         <div className="flex-1" />
         {importError && <span className="text-xs text-red-400">{importError}</span>}
-        <span className="text-xs text-neutral-500">{images.length} images</span>
+        <span className="text-xs text-neutral-500">
+          {t("library.imageCount", { count: images.length })}
+        </span>
       </div>
 
       {/* Grid */}
@@ -234,10 +238,8 @@ export function LibraryScreen() {
         {images.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
-              <p className="text-sm text-neutral-400">No images imported yet</p>
-              <p className="mt-1 text-xs text-neutral-600">
-                Click "Import Folder" to get started
-              </p>
+              <p className="text-sm text-neutral-400">{t("library.empty")}</p>
+              <p className="mt-1 text-xs text-neutral-600">{t("library.emptyHint")}</p>
             </div>
           </div>
         ) : (

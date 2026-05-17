@@ -1,12 +1,5 @@
+import { useTranslation } from "@/i18n";
 import type { WatermarkPosition, WatermarkTemplate } from "@/types";
-
-const POSITIONS: { id: WatermarkPosition; label: string }[] = [
-  { id: "top_left", label: "Top L" },
-  { id: "top_right", label: "Top R" },
-  { id: "bottom_left", label: "Bottom L" },
-  { id: "bottom_center", label: "Bottom C" },
-  { id: "bottom_right", label: "Bottom R" },
-];
 
 export function WatermarkPanel({
   template,
@@ -15,10 +8,19 @@ export function WatermarkPanel({
   template: WatermarkTemplate;
   onChange: (t: WatermarkTemplate) => void;
 }) {
+  const { t } = useTranslation();
+  const POSITIONS: { id: WatermarkPosition; labelKey: string }[] = [
+    { id: "top_left", labelKey: "export.watermarkPositions.topLeft" },
+    { id: "top_right", labelKey: "export.watermarkPositions.topRight" },
+    { id: "bottom_left", labelKey: "export.watermarkPositions.bottomLeft" },
+    { id: "bottom_center", labelKey: "export.watermarkPositions.bottomCenter" },
+    { id: "bottom_right", labelKey: "export.watermarkPositions.bottomRight" },
+  ];
+
   return (
     <div>
       <label className="mb-1 flex items-center justify-between text-[11px] text-neutral-400">
-        <span>Watermark</span>
+        <span>{t("export.watermarkLabel")}</span>
         <label className="flex items-center gap-1 text-[10px] text-neutral-500">
           <input
             type="checkbox"
@@ -26,7 +28,7 @@ export function WatermarkPanel({
             onChange={(e) => onChange({ ...template, enabled: e.target.checked })}
             className="accent-blue-500"
           />
-          Enable
+          {t("export.watermarkEnable")}
         </label>
       </label>
 
@@ -35,13 +37,13 @@ export function WatermarkPanel({
           <input
             value={template.text}
             onChange={(e) => onChange({ ...template, text: e.target.value })}
-            placeholder="Watermark text..."
+            placeholder={t("export.watermarkText")}
             className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 placeholder-neutral-500"
           />
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-[10px] text-neutral-500">Color</label>
+              <label className="mb-1 block text-[10px] text-neutral-500">{t("export.watermarkColor")}</label>
               <input
                 type="color"
                 value={template.color}
@@ -51,7 +53,7 @@ export function WatermarkPanel({
             </div>
             <div>
               <label className="mb-1 block text-[10px] text-neutral-500">
-                Opacity {Math.round(template.opacity * 100)}%
+                {t("export.watermarkOpacity", { pct: Math.round(template.opacity * 100) })}
               </label>
               <input
                 type="range"
@@ -68,7 +70,7 @@ export function WatermarkPanel({
 
           <div>
             <label className="mb-1 block text-[10px] text-neutral-500">
-              Font size {template.fontSize}px
+              {t("export.watermarkFontSize", { size: template.fontSize })}
             </label>
             <input
               type="range"
@@ -83,7 +85,7 @@ export function WatermarkPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] text-neutral-500">Position</label>
+            <label className="mb-1 block text-[10px] text-neutral-500">{t("export.watermarkPosition")}</label>
             <div className="grid grid-cols-3 gap-1">
               {POSITIONS.map((p) => (
                 <button
@@ -95,7 +97,7 @@ export function WatermarkPanel({
                       : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                   }`}
                 >
-                  {p.label}
+                  {t(p.labelKey)}
                 </button>
               ))}
             </div>
@@ -103,7 +105,7 @@ export function WatermarkPanel({
 
           <div>
             <label className="mb-1 block text-[10px] text-neutral-500">
-              Margin {template.margin}px
+              {t("export.watermarkMargin", { px: template.margin })}
             </label>
             <input
               type="range"

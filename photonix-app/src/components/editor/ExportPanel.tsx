@@ -5,6 +5,7 @@ import { useStyleStore } from "@/stores/styleStore";
 import { isTauri } from "@/services/tauri/invoke";
 import { invoke } from "@/services/tauri/invoke";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import { BorderPanel } from "@/components/export/BorderPanel";
 import { WatermarkPanel } from "@/components/export/WatermarkPanel";
 import { applyFilenameTemplate } from "@/services/export/filenameTemplate";
@@ -20,6 +21,7 @@ import {
 } from "@/types";
 
 export function ExportPanel() {
+  const { t } = useTranslation();
   const defaultPreset = useSettingsStore((s) => s.defaultExportPreset);
   const [presetId, setPresetId] = useState<ExportPresetId>(defaultPreset);
   const [exporting, setExporting] = useState(false);
@@ -175,22 +177,25 @@ export function ExportPanel() {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[10px] text-neutral-500">
-        Export the current version. Original files are never modified.
+        {t("export.introHelp")}
       </p>
 
       {/* Source info */}
       {exportSource && (
         <div className="rounded bg-neutral-800/50 p-2">
           <p className="text-[10px] text-neutral-500">
-            Exporting:{" "}
-            {activeVersion ? `${activeVersion.versionKind} version` : "original image"}
+            {t("export.sourceInfoFmt", {
+              label: activeVersion
+                ? t("editor.canvasLabels.versionFmt", { kind: activeVersion.versionKind })
+                : t("editor.canvasLabels.original"),
+            })}
           </p>
         </div>
       )}
 
       {/* Preset selection */}
       <div>
-        <label className="mb-1 block text-[11px] text-neutral-400">Preset</label>
+        <label className="mb-1 block text-[11px] text-neutral-400">{t("export.presetLabel")}</label>
         <div className="flex flex-col gap-1">
           {EXPORT_PRESETS.map((p) => (
             <PresetButton
@@ -207,7 +212,7 @@ export function ExportPanel() {
       {isCustom && (
         <div className="border-t border-neutral-800 pt-3">
           <div>
-            <label className="mb-1 block text-[11px] text-neutral-400">Format</label>
+            <label className="mb-1 block text-[11px] text-neutral-400">{t("export.formatLabel")}</label>
             <div className="flex gap-1">
               <button
                 onClick={() => setCustomFormat("jpeg")}
@@ -235,7 +240,7 @@ export function ExportPanel() {
           {customFormat === "jpeg" && (
             <div className="mt-3">
               <label className="mb-1 flex items-center justify-between text-[11px] text-neutral-400">
-                <span>Quality</span>
+                <span>{t("export.qualityLabel")}</span>
                 <span>{customQuality}%</span>
               </label>
               <input
@@ -251,7 +256,7 @@ export function ExportPanel() {
 
           <div className="mt-3">
             <label className="mb-1 block text-[11px] text-neutral-400">
-              Long edge (optional resize)
+              {t("export.longEdgeLabel")}
             </label>
             <div className="flex gap-1">
               {[null, 2560, 4096, 5120].map((v) => (
@@ -264,7 +269,7 @@ export function ExportPanel() {
                       : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                   }`}
                 >
-                  {v ? `${v}px` : "Original"}
+                  {v ? `${v}px` : t("export.longEdgeOriginal")}
                 </button>
               ))}
             </div>
@@ -285,7 +290,7 @@ export function ExportPanel() {
       {/* MVP3: Filename template */}
       <div className="border-t border-neutral-800 pt-3">
         <label className="mb-1 block text-[11px] text-neutral-400">
-          Filename template
+          {t("export.filenameTemplateLabel")}
         </label>
         <input
           value={filenameTemplate}
@@ -293,12 +298,10 @@ export function ExportPanel() {
           className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
         />
         <p className="mt-1 truncate text-[10px] text-neutral-500" title={suggestedFilename}>
-          → {suggestedFilename || "(no image selected)"}
+          → {suggestedFilename || "—"}
         </p>
         <p className="mt-1 text-[9px] text-neutral-600">
-          Tokens: {"{"}original_name{"}"}, {"{"}style{"}"}, {"{"}preset{"}"},{" "}
-          {"{"}version_kind{"}"}, {"{"}date{"}"}, {"{"}time{"}"}, {"{"}index{"}"},{" "}
-          {"{"}ext{"}"}
+          {t("export.filenameTokensHint")}
         </p>
       </div>
 
@@ -308,7 +311,7 @@ export function ExportPanel() {
         disabled={exporting || !exportSource}
         className="mt-2 w-full rounded bg-green-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-green-500 disabled:opacity-50"
       >
-        {exporting ? "Exporting..." : "Export"}
+        {exporting ? t("export.exporting") : t("export.exportButton")}
       </button>
     </div>
   );

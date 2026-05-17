@@ -60,6 +60,11 @@ pub fn run() {
             commands::candidates::list_favorite_candidates,
             commands::candidates::set_candidate_favorite,
             commands::candidates::delete_candidate,
+            commands::prompt_templates::list_prompt_templates,
+            commands::prompt_templates::upsert_prompt_template,
+            commands::prompt_templates::delete_prompt_template,
+            commands::prompt_templates::set_prompt_template_favorite,
+            commands::prompt_templates::seed_builtin_prompt_templates,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

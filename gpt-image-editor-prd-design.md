@@ -1,8 +1,8 @@
 # GPT-Image-2 Windows Photo Editor
 
-Version: v0.3
+Version: v0.4
 Date: 2026-05-17
-Status: Draft, updated with MVP2 and MVP3 planning
+Status: Draft, updated with MVP2, MVP3, and MVP4 planning
 
 ## 1. Document Purpose
 
@@ -18,6 +18,7 @@ The document covers:
 - prompt compilation strategy
 - data model, module design, and API abstraction
 - UI approach based on `Tauri + React + shadcn/ui + Radix UI + Tailwind CSS`
+- MVP4 Chinese internationalization and prompt center scope
 - development milestones and risk assessment
 
 ## 2. Product Summary
@@ -43,6 +44,8 @@ The product should help users quickly complete edits such as:
 - changing atmosphere, season, or weather
 - adjusting visual tone through prompt-driven edits
 - applying edits to high-resolution source images without losing the local-desktop workflow
+- making the desktop workflow accessible in both English and Simplified Chinese
+- reusing high-quality generation and editing prompts through a searchable local prompt center
 
 ### 2.3 Platform Strategy
 
@@ -168,8 +171,6 @@ MVP2 explicitly does not prioritize original-resolution crop-stitch editing. Cro
 
 See [§32](#32-mvp2-social-landscape-edition) for detailed requirements.
 
-### 6.3 Post-MVP Features
-
 ### 6.3 MVP3 Personal Style Workflow
 
 MVP3 focuses on personal creative workflow and repeatable output style.
@@ -194,11 +195,32 @@ MVP3 does not require sending both the source photo and reference photo into the
 
 See [§33](#33-mvp3-personal-style-workflow) for detailed requirements.
 
-### 6.4 Post-MVP Features
+### 6.4 MVP4 Chinese Internationalization and Prompt Center
+
+MVP4 focuses on making Photonix easier to use daily for Chinese-speaking users and easier to operate as both an image editor and text-to-image generator.
+
+MVP4 features:
+
+- full bilingual UI support for English and Simplified Chinese
+- default language follows the operating system locale, with manual override in Settings
+- persisted language preference stored locally
+- a first-class Prompt Center for both text-to-image generation and image editing
+- searchable, filterable prompt templates with categories, tags, favorites, source attribution, and copy/apply actions
+- prompt templates can be applied to Generate or Editor prompt boxes for user review before execution
+- selected prompt inspiration is derived only from `ZeroLu/awesome-gpt-image`, rewritten into Photonix-owned templates where appropriate
+- prompt template content is not automatically translated or rewritten by i18n
+
+MVP4 explicitly does not include online prompt synchronization, multi-repository prompt ingestion, AI prompt rewriting, image-to-prompt generation, prompt marketplace, or account/cloud sync.
+
+See [§34](#34-mvp4-chinese-internationalization-and-prompt-center) for detailed requirements.
+
+### 6.5 Post-MVP Features
 
 - region auto-detection
 - smart prompt suggestions
 - direct reference-image-based edits
+- online prompt repository synchronization
+- AI prompt optimization and image-to-prompt generation
 - project folders and tags
 - original-resolution crop-stitch local repair
 - RAW workflow support
@@ -1245,7 +1267,6 @@ pub struct GenerateImageRequest {
     pub size: String,
     pub quality: String,
     pub base_url: String,
-    pub api_key: String,
     pub image_model: String,
 }
 ```
@@ -1336,6 +1357,32 @@ For MVP, the Generate screen is independent from the Library and Editor screens.
 - image-to-image variation seeded from a selected generation
 - per-generation tags, search, and pinning
 - bulk export of selected generations
+
+### 31.14 Implementation Status (2026-05-17)
+
+Image Generation Mode has been implemented as a first-class top-level workflow.
+
+Delivered:
+
+- top-level Generate navigation and screen
+- `GeneratePromptPanel`, `GeneratePreview`, and `GenerateGallery` UI modules
+- prompt input, starter prompts, size selection, quality selection, and Ctrl/Cmd + Enter generation shortcut
+- Rust-side `generate_image`, `list_generated_images`, and `delete_generated_image` commands
+- provider request to `{base_url}/images/generations`
+- `response_format: b64_json` request path with URL fallback handling
+- local PNG persistence under `app_data/generations/<uuid>.png`
+- `generated_images` SQLite persistence through migration 002
+- newest-first gallery restore from local database
+- selected generation preview with prompt, size, quality, dimensions, file size, export, and delete flows
+- API key read from OS-backed secure storage by Rust; plaintext API key is not passed through the JS layer
+
+Current non-goals remain unchanged:
+
+- no batch generation
+- no AI prompt enhancement or auto-rewrite
+- no image-to-image variation
+- no direct hand-off from generation into the edit pipeline
+- no automatic inclusion of generated images in the imported photo library
 
 ## 32. MVP2 Social Landscape Edition
 
@@ -2573,3 +2620,364 @@ Notable deviations from §33.10 suggestions:
   pure pixel transforms with no scheduling or persistence concerns. The
   `export_templates` SQLite table is reserved for user-saved template
   presets in a future iteration.
+
+## 34. MVP4 Chinese Internationalization and Prompt Center
+
+### 34.1 Purpose
+
+MVP4 has two product goals:
+
+- make Photonix comfortable for Chinese-speaking users through full Simplified Chinese UI localization
+- make prompt reuse a first-class workflow for both image generation and image editing
+
+The prompt center should improve day-to-day creative speed. Users should not need to repeatedly write long prompts for common generation styles, landscape edits, portrait edits, social visuals, or creative references. The feature should feel like a curated local creative library, not a generic marketplace.
+
+### 34.2 Product Scope
+
+MVP4 includes:
+
+- English and Simplified Chinese UI language support
+- default language detection from the operating system
+- manual language override in Settings
+- persisted language preference
+- localized labels, buttons, empty states, tooltips, status text, validation text, and common error wrappers
+- a top-level Prompt Center screen
+- prompt templates for `generate`, `edit`, and `both`
+- search, category filter, mode filter, tag display, favorites, source attribution, copy, and apply actions
+- template apply behavior that fills the target prompt box and lets the user edit before running
+- selected built-in templates inspired by `ZeroLu/awesome-gpt-image`, rewritten and curated for Photonix
+
+MVP4 excludes:
+
+- online sync from GitHub repositories
+- automatic ingestion from multiple external repositories
+- prompt marketplace or public sharing
+- AI prompt optimization or auto-rewrite
+- image-to-prompt generation
+- automatic translation of prompt template content
+- account login, cloud sync, or team libraries
+
+### 34.3 Internationalization Requirements
+
+Language behavior:
+
+- supported languages: English (`en`) and Simplified Chinese (`zh-CN`)
+- default: follow OS language when first launched
+- fallback: English when OS language is unsupported
+- user can override language in Settings
+- selected language persists locally and applies after restart
+
+Localization coverage:
+
+- sidebar navigation
+- Generate screen
+- Library screen
+- Editor screen
+- Style screen
+- Settings screen
+- export and batch export dialogs
+- prompt history and preset UI
+- toast messages and common validation messages
+- empty, loading, success, warning, and error states
+
+Localization boundaries:
+
+- do not translate user-entered prompts
+- do not translate stored prompt template prompt text automatically
+- do not translate model names, provider names, file paths, filenames, or raw provider API errors
+- technical errors may preserve original details, but user-facing wrappers should be localized
+
+### 34.4 Prompt Center Requirements
+
+Prompt Center should provide a single library for both creation and editing.
+
+Template modes:
+
+- `generate`: used for text-to-image generation
+- `edit`: used for editing imported photos
+- `both`: can be applied to either workflow
+
+Core actions:
+
+- browse templates
+- search by title, description, prompt text, and tags
+- filter by mode
+- filter by category
+- favorite and unfavorite templates
+- copy prompt text to clipboard
+- apply to Generate prompt box
+- apply to Editor prompt box
+- view source attribution when available
+
+Apply behavior:
+
+- applying a template never immediately calls the model
+- applying to Generate fills the Generate prompt textarea
+- applying to Editor fills the edit prompt textarea
+- if a prompt box already contains text, default behavior is replace after user confirmation or explicit "Replace" action
+- users can edit the filled prompt before running generation or editing
+
+Built-in content strategy:
+
+- use `ZeroLu/awesome-gpt-image` as the only MVP4 external inspiration source
+- do not import the full repository as product data
+- rewrite selected prompts into Photonix-owned templates where possible
+- retain source name and source URL when a template is closely derived from external material
+- prefer photography, realistic generation, visual style, commercial/social imagery, and image editing categories
+- avoid templates that encourage direct copying of living artists, private people, brands, or copyrighted characters
+
+### 34.5 Information Architecture
+
+Add a new top-level navigation item:
+
+- `Prompt Center`
+
+Prompt Center layout:
+
+- left rail: mode filter, category filter, favorites shortcut, source filter
+- main area: searchable template grid or list
+- detail panel: title, description, prompt, negative prompt, tags, mode, source, and actions
+
+Entry points from existing screens:
+
+- Generate screen: "Open Prompt Center" action near prompt textarea
+- Editor prompt panel: "Open Prompt Center" action near prompt textarea
+- Prompt Center: "Apply to Generate" and "Apply to Editor" actions
+
+Recommended categories:
+
+- Landscape
+- Portrait
+- Product
+- Cinematic
+- Social
+- Illustration
+- Interior
+- Macro
+- Editing
+- Style Transfer
+
+### 34.6 Data Model
+
+Add a unified prompt template table:
+
+```sql
+CREATE TABLE IF NOT EXISTS prompt_templates (
+    id TEXT PRIMARY KEY,
+    mode TEXT NOT NULL,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    prompt TEXT NOT NULL,
+    negative_prompt TEXT,
+    tags_json TEXT,
+    language TEXT NOT NULL DEFAULT 'en',
+    source_name TEXT,
+    source_url TEXT,
+    is_builtin INTEGER NOT NULL DEFAULT 0,
+    is_favorite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_mode ON prompt_templates(mode);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_category ON prompt_templates(category);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_favorite ON prompt_templates(is_favorite);
+```
+
+Suggested frontend type:
+
+```ts
+type PromptTemplateMode = "generate" | "edit" | "both";
+
+interface PromptTemplate {
+  id: string;
+  mode: PromptTemplateMode;
+  category: string;
+  title: string;
+  description?: string;
+  prompt: string;
+  negativePrompt?: string;
+  tags: string[];
+  language: "en" | "zh-CN";
+  sourceName?: string;
+  sourceUrl?: string;
+  isBuiltin: boolean;
+  isFavorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+Suggested Tauri commands:
+
+- `list_prompt_templates(mode?: string, category?: string, favorites_only?: bool, query?: string)`
+- `upsert_prompt_template(template)`
+- `delete_prompt_template(id)`
+- `set_prompt_template_favorite(id, is_favorite)`
+
+### 34.7 UI and UX Notes
+
+The prompt center should feel like a creative cockpit:
+
+- dense enough for browsing many ideas
+- still calm and legible for long prompts
+- optimized for keyboard search and quick apply
+- clear about whether a template is for generation, editing, or both
+- clear about external source attribution
+
+Chinese localization should not make the interface visually heavier. Prefer concise Chinese labels and short helper copy.
+
+Recommended Chinese labels:
+
+- Generate: `生图`
+- Library: `图库`
+- Editor: `修图`
+- Style: `我的风格`
+- Prompt Center: `提示词中心`
+- Settings: `设置`
+- Apply to Generate: `用于生图`
+- Apply to Editor: `用于修图`
+- Favorite: `收藏`
+- Source: `来源`
+
+### 34.8 Milestones
+
+#### Milestone 1: i18n Foundation
+
+- add language type and settings persistence
+- implement lightweight translation dictionaries
+- detect OS language on first launch
+- add language selector in Settings
+- localize global navigation and common UI primitives
+
+#### Milestone 2: Full UI Localization Pass
+
+- localize Generate, Library, Editor, Style, Settings, Export, Batch, and Toast text
+- localize common labels for quality, size, status, export presets, candidate states, and style categories
+- verify English still works as the fallback language
+
+#### Milestone 3: Prompt Template Data Layer
+
+- add prompt template migration
+- add Rust commands and TypeScript service wrapper
+- seed curated built-in templates
+- preserve existing edit preset and quick prompt behavior while preparing migration to the unified model
+
+#### Milestone 4: Prompt Center UI
+
+- add top-level Prompt Center view
+- implement search, filters, template cards, detail panel, favorites, copy, and source links
+- support apply-to-generate and apply-to-editor flows
+
+#### Milestone 5: Polish and QA
+
+- review Chinese copy for clarity and consistency
+- test long prompt readability
+- test template attribution display
+- test first-launch language detection and restart persistence
+- run build checks and manual workflow smoke tests
+
+### 34.9 Acceptance Criteria
+
+MVP4 is done when:
+
+- a Chinese OS defaults to Simplified Chinese on first launch
+- an English or unsupported OS defaults to English
+- the user can switch language in Settings and the choice persists after restart
+- all primary workflows are usable in Simplified Chinese
+- Generate, Library, Editor, Style, Settings, Export, Batch, and Prompt Center have no major hardcoded English UI text
+- Prompt Center can list, search, filter, favorite, copy, and apply templates
+- applying a template fills the selected prompt box without immediately calling the model
+- Prompt Center supports generation templates, editing templates, and shared templates
+- built-in templates include clear categories and attribution where external inspiration is close
+- prompt template content is not automatically translated or modified by i18n
+- `npm run build` and `cargo check` pass
+
+### 34.10 Deferred From MVP4
+
+The following remain future work:
+
+- live GitHub repository sync
+- importing all prompts from `ZeroLu/awesome-gpt-image`
+- support for `YouMind-OpenLab/awesome-gpt-image-2` and `Anil-matcha/Awesome-GPT-Image-2-API-Prompts`
+- AI prompt optimization with `gpt-5.4-mini` or `gpt-5.4`
+- image-to-prompt generation
+- community sharing, marketplace, ratings, or comments
+- cloud prompt sync across devices
+- prompt quality scoring or automated moderation
+
+### 34.11 Implementation Status (2026-05-17)
+
+MVP4 has been implemented end-to-end. Frontend (`tsc -b && vite build`) and
+Rust (`cargo check`) both compile cleanly.
+
+Delivered against §34.8 milestones:
+
+- **M1 i18n Foundation**: `src/i18n/` module with English and Simplified
+  Chinese dictionaries, `useTranslation` hook, OS-language detection from
+  `navigator.languages`, persisted choice via `app_settings.ui_language`,
+  language picker in Settings → Language. Sidebar nav, settings categories,
+  and common buttons all run through `t()`.
+- **M2 Full UI Localization Pass**: Library, Editor (canvas chrome, tabs,
+  prompt panel, mask indicators, history, export panel, candidate strip),
+  Style (screen, list, detail, reference analyzer), Generate (prompt
+  panel), Batch Edit dialog, Batch Export dialog, Border + Watermark
+  panels, and Prompt Center are fully localized through translation keys.
+  English remains the runtime fallback.
+- **M3 Prompt Template Data Layer**: SQLite migration 005 adds
+  `prompt_templates` (id, mode, category, title, description, prompt,
+  negative_prompt, tags_json, language, source_name, source_url,
+  is_builtin, is_favorite, created_at, updated_at).
+  `commands::prompt_templates::*` exposes
+  `list_prompt_templates(args)` (mode + category + favorites_only +
+  full-text search), `upsert_prompt_template`,
+  `delete_prompt_template` (refuses to delete built-ins),
+  `set_prompt_template_favorite`, and idempotent
+  `seed_builtin_prompt_templates` invoked once from `bootstrapSettings`.
+- **M4 Prompt Center UI**: Top-level Prompt Center view with sidebar
+  filters (mode, category, favorites-only, search), template list with
+  favorite stars, detail panel with prompt / negative-prompt / tags /
+  source attribution / Apply-to-Generate / Apply-to-Editor actions, and a
+  built-in template editor for user-created prompts. Entry-point buttons
+  added to Generate prompt panel and Editor prompt panel.
+- **M5 Polish & QA**: Built-in seed contains 14 templates inspired by
+  ZeroLu/awesome-gpt-image, rewritten in Photonix's voice and tagged with
+  source attribution where appropriate. Templates avoid copying living
+  artists, brands, or recognisable individuals. Apply behaviour confirms
+  before replacing existing prompt text. Built-ins are read-only at the
+  database level (`delete` refuses to remove rows where
+  `is_builtin = 1`).
+
+Acceptance criteria coverage (§34.9):
+
+- Chinese / unsupported OS detection: yes — first launch picks `zh-CN` for
+  any locale starting with `zh`, English for everything else.
+- Language switch in Settings persists across restart: yes —
+  `app_settings.ui_language` written via `saveSetting` and read by
+  `bootstrapSettings`.
+- Major workflows usable in Simplified Chinese: yes — Sidebar, Settings,
+  Generate, Library, Editor (prompt + history), Style, Batch Edit, Batch
+  Export, and Prompt Center all run through translation keys.
+- Prompt Center supports list / search / filter / favorite / copy /
+  apply: yes.
+- Apply does not invoke the model directly: yes — only `setPrompt(...)`
+  on the Generate or Editor store.
+- Built-in templates carry attribution where derived: yes — 9 of 14
+  carry `source_name = "ZeroLu/awesome-gpt-image (inspired)"` plus the
+  upstream URL.
+- Built-in template content is not auto-translated: yes — seeds are
+  English, the i18n layer never rewrites stored prompt text.
+- `npm run build` and `cargo check` pass.
+
+Notes for future iterations:
+
+- Toast and error-wrapper messages still flow strings from service code.
+  These are short and most are already keyed; remaining stragglers can
+  be migrated incrementally.
+- Quick prompts in the Generate panel are intentionally English; they
+  exist as English seed examples for English text-to-image generation,
+  not as UI chrome.
+- `Tip: Ctrl/Cmd + Enter` in the Generate panel is a small developer
+  shortcut and was left as a literal string for brevity. A future polish
+  pass can move it to `generate.shortcutHint`.

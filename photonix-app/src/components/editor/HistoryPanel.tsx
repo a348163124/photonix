@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { isTauri } from "@/services/tauri/invoke";
 import { loadVersionsForImage } from "@/services/loadVersionsForImage";
+import { useTranslation } from "@/i18n";
 
 export function HistoryPanel() {
+  const { t } = useTranslation();
   const selectedImageId = useAppStore((s) => s.selectedImageId);
   const versions = useAppStore((s) => s.currentVersions);
   const activeVersionId = useAppStore((s) => s.activeVersionId);
@@ -18,19 +20,26 @@ export function HistoryPanel() {
   if (versions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-2">
-        <p className="text-xs text-neutral-500">No versions yet</p>
+        <p className="text-xs text-neutral-500">{t("editor.history.empty")}</p>
         <p className="text-[10px] text-neutral-600 text-center">
-          Generate an edit to create the first version.
-          Each accepted result becomes a version entry.
+          {t("editor.history.emptyHint")}
         </p>
       </div>
     );
   }
 
+  const KIND_LABELS: Record<string, string> = {
+    original: t("editor.history.kindOriginal"),
+    draft: t("editor.history.kindDraft"),
+    final: t("editor.history.kindFinal"),
+    stitched: t("editor.history.kindStitched"),
+    export_snapshot: t("editor.history.kindExportSnapshot"),
+  };
+
   return (
     <div className="flex flex-col gap-1">
       <p className="text-[10px] text-neutral-500 mb-2">
-        {versions.length} version{versions.length !== 1 ? "s" : ""}
+        {t("editor.history.versionsCount", { count: versions.length })}
       </p>
       {versions.map((v) => (
         <button
@@ -44,13 +53,17 @@ export function HistoryPanel() {
         >
           <VersionIcon kind={v.versionKind} />
           <div className="flex-1 min-w-0">
-            <span className="capitalize block truncate">{v.versionKind}</span>
+            <span className="capitalize block truncate">
+              {KIND_LABELS[v.versionKind] ?? v.versionKind}
+            </span>
             <span className="text-[9px] text-neutral-600">
               {v.width}×{v.height}
             </span>
           </div>
           {v.isCurrent && (
-            <span className="text-[9px] text-green-500 shrink-0">current</span>
+            <span className="text-[9px] text-green-500 shrink-0">
+              {t("editor.history.currentBadge")}
+            </span>
           )}
         </button>
       ))}

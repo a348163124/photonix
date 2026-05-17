@@ -8,6 +8,7 @@ import { EditorScreen } from "@/components/editor/EditorScreen";
 import { SettingsScreen } from "@/components/settings/SettingsScreen";
 import { GenerateScreen } from "@/components/generate/GenerateScreen";
 import { StyleScreen } from "@/components/style/StyleScreen";
+import { PromptCenterScreen } from "@/components/promptCenter/PromptCenterScreen";
 
 export function AppShell() {
   const currentView = useAppStore((s) => s.currentView);
@@ -23,6 +24,7 @@ export function AppShell() {
             {currentView === "library" && <LibraryScreen />}
             {currentView === "editor" && <EditorScreen />}
             {currentView === "style" && <StyleScreen />}
+            {currentView === "promptCenter" && <PromptCenterScreen />}
             {currentView === "settings" && <SettingsScreen />}
           </ErrorBoundary>
         </main>

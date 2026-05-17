@@ -5,6 +5,7 @@ import { analyzeReferenceStyle } from "@/services/tauri/referenceStyle";
 import { upsertStyleProfile } from "@/services/tauri/styles";
 import { isTauri } from "@/services/tauri/invoke";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import type { ReferenceStyleAnalysis, StyleProfile } from "@/types";
 
 export function ReferenceStyleAnalyzer({
@@ -12,6 +13,7 @@ export function ReferenceStyleAnalyzer({
 }: {
   onSaved: (savedId: string) => void;
 }) {
+  const { t } = useTranslation();
   const provider = useSettingsStore((s) => s.provider);
   const hasApiKey = useSettingsStore((s) => s.hasApiKey);
   const addStyle = useStyleStore((s) => s.addStyle);
@@ -24,7 +26,7 @@ export function ReferenceStyleAnalyzer({
 
   async function pickImage() {
     if (!isTauri()) {
-      toast("Reference picker requires the desktop app.", "error");
+      toast(t("errors.desktopOnly"), "error");
       return;
     }
     const { open } = await import("@tauri-apps/plugin-dialog");
@@ -45,12 +47,9 @@ export function ReferenceStyleAnalyzer({
   }
 
   async function runAnalysis() {
-    if (!imagePath) {
-      toast("Pick a reference image first.", "info");
-      return;
-    }
+    if (!imagePath) return;
     if (!hasApiKey) {
-      toast("Configure your API key in Settings first.", "error");
+      toast(t("errors.apiKeyMissing"), "error");
       return;
     }
     setAnalyzing(true);
@@ -63,7 +62,7 @@ export function ReferenceStyleAnalyzer({
       );
       setAnalysis(result);
       setDraft(result.draftProfile);
-      toast("Reference style extracted", "success");
+      toast(t("style.analyzer.extractedHeading"), "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast(msg, "error");
@@ -82,7 +81,7 @@ export function ReferenceStyleAnalyzer({
       };
       await upsertStyleProfile(finalProfile);
       addStyle(finalProfile);
-      toast(`Saved style "${finalProfile.name}"`, "success");
+      toast(t("toast.saved"), "success");
       onSaved(finalProfile.id);
     } catch (err) {
       toast(err instanceof Error ? err.message : String(err), "error");
@@ -93,7 +92,9 @@ export function ReferenceStyleAnalyzer({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium text-neutral-200">Analyze Reference Image</h2>
+      <h2 className="text-sm font-medium text-neutral-200">
+        {t("style.analyzer.heading")}
+      </h2>
 
       {/* Picker */}
       <div className="flex items-center gap-2">
@@ -101,7 +102,7 @@ export function ReferenceStyleAnalyzer({
           onClick={pickImage}
           className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-700"
         >
-          {imagePath ? "Change image" : "Pick reference image"}
+          {imagePath ? t("style.analyzer.changeImage") : t("style.analyzer.pickImage")}
         </button>
         {imagePath && (
           <span className="truncate text-[10px] text-neutral-500" title={imagePath}>
@@ -112,41 +113,40 @@ export function ReferenceStyleAnalyzer({
 
       {/* Privacy note */}
       <p className="rounded bg-amber-900/20 px-2 py-1 text-[10px] text-amber-300/80">
-        The reference is sent to your provider as a small JPEG proxy. Photonix
-        instructs the model to describe only color, light, and tone — never
-        people, places, or copyrighted content. The original file is not
-        uploaded.
+        {t("style.analyzer.privacyNote")}
       </p>
 
       {/* Vision model indicator */}
       <div className="flex items-center justify-between rounded bg-neutral-800/50 px-2 py-1">
-        <span className="text-[10px] text-neutral-500">Vision model</span>
-        <span className="text-[10px] text-neutral-300" title="Override in Settings → Provider & Models → Vision Model">
-          {provider.visionModel?.trim() || `${provider.textModel} (fallback)`}
+        <span className="text-[10px] text-neutral-500">
+          {t("style.analyzer.visionModelLabel")}
+        </span>
+        <span className="text-[10px] text-neutral-300">
+          {provider.visionModel?.trim() ||
+            t("style.analyzer.visionModelFallback", { model: provider.textModel })}
         </span>
       </div>
-      <p className="text-[9px] text-neutral-600">
-        If analysis fails with "model does not support image input", set a
-        vision-capable model in Settings → Provider &amp; Models.
-      </p>
+      <p className="text-[9px] text-neutral-600">{t("style.analyzer.visionModelHelp")}</p>
 
       <button
         onClick={runAnalysis}
         disabled={!imagePath || analyzing || !hasApiKey}
         className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40"
       >
-        {analyzing ? "Analyzing..." : "Analyze"}
+        {analyzing ? t("style.analyzer.analyzing") : t("style.analyzer.analyze")}
       </button>
 
       {/* Results */}
       {analysis && draft && (
         <div className="border-t border-neutral-800 pt-3 flex flex-col gap-3">
-          <h3 className="text-xs font-medium text-neutral-300">Extracted style</h3>
+          <h3 className="text-xs font-medium text-neutral-300">
+            {t("style.analyzer.extractedHeading")}
+          </h3>
 
           {/* Palette */}
           <div>
             <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
-              Palette
+              {t("style.analyzer.palette")}
             </div>
             <div className="flex flex-wrap gap-1">
               {(analysis.ai.dominantPalette.length > 0
@@ -166,15 +166,15 @@ export function ReferenceStyleAnalyzer({
           {/* Local stats */}
           <div className="grid grid-cols-3 gap-2 text-[10px] text-neutral-400">
             <Stat
-              label="Warm/Cool"
+              label={t("style.analyzer.warmCool")}
               value={analysis.localColor.warmCoolBalance.toFixed(2)}
             />
             <Stat
-              label="Saturation"
+              label={t("style.analyzer.saturation")}
               value={analysis.localColor.saturationMean.toFixed(2)}
             />
             <Stat
-              label="Contrast"
+              label={t("style.analyzer.contrast")}
               value={analysis.localColor.contrastEstimate.toFixed(2)}
             />
           </div>
@@ -182,7 +182,7 @@ export function ReferenceStyleAnalyzer({
           {/* AI summary */}
           <div>
             <label className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
-              AI summary
+              {t("style.analyzer.summary")}
             </label>
             <p className="rounded bg-neutral-800 p-2 text-[11px] text-neutral-300">
               {analysis.ai.summary}
@@ -192,21 +192,21 @@ export function ReferenceStyleAnalyzer({
           {/* Editable draft */}
           <div className="border-t border-neutral-800 pt-3">
             <h3 className="mb-2 text-xs font-medium text-neutral-300">
-              Save as style profile
+              {t("style.analyzer.saveHeading")}
             </h3>
             <div className="flex flex-col gap-2">
               <input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
-                placeholder="Style name"
+                placeholder={t("style.analyzer.stylePlaceholder")}
               />
               <textarea
                 value={draft.description}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 rows={2}
                 className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
-                placeholder="Description"
+                placeholder={t("style.analyzer.descPlaceholder")}
               />
               <textarea
                 value={draft.positivePrompt}
@@ -215,7 +215,7 @@ export function ReferenceStyleAnalyzer({
                 }
                 rows={4}
                 className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
-                placeholder="Positive prompt fragment"
+                placeholder={t("style.analyzer.positivePlaceholder")}
               />
               <textarea
                 value={draft.negativePrompt}
@@ -224,14 +224,14 @@ export function ReferenceStyleAnalyzer({
                 }
                 rows={2}
                 className="w-full resize-none rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
-                placeholder="Negative constraints"
+                placeholder={t("style.analyzer.negativePlaceholder")}
               />
               <button
                 onClick={handleSave}
                 disabled={saving || !draft.name.trim()}
                 className="rounded bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-40"
               >
-                {saving ? "Saving..." : "Save style profile"}
+                {saving ? t("style.analyzer.saving") : t("style.analyzer.saveAs")}
               </button>
             </div>
           </div>

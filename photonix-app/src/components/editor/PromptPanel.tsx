@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useStyleStore } from "@/stores/styleStore";
 import { useCandidateStore } from "@/stores/candidateStore";
 import { usePresetsStore, BUILT_IN_PRESETS } from "@/stores/promptPresets";
+import { usePromptTemplateStore } from "@/stores/promptTemplateStore";
 import { runEditPipeline } from "@/services/editPipeline";
 import { getVersions } from "@/services/tauri/versions";
 import { isTauri } from "@/services/tauri/invoke";
@@ -18,6 +19,7 @@ import {
   upsertCustomPreset,
 } from "@/services/tauri/promptHistory";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import type {
   CandidateMode,
   EditPreset,
@@ -27,6 +29,7 @@ import type {
 } from "@/types";
 
 export function PromptPanel() {
+  const { t } = useTranslation();
   const selectedImageId = useAppStore((s) => s.selectedImageId);
   const images = useAppStore((s) => s.images);
   const versions = useAppStore((s) => s.currentVersions);
@@ -250,11 +253,22 @@ export function PromptPanel() {
     <div className="flex flex-col gap-3">
       {/* Prompt input */}
       <div>
-        <label className="mb-1 block text-[11px] text-neutral-400">Prompt</label>
+        <div className="mb-1 flex items-center justify-between">
+          <label className="text-[11px] text-neutral-400">{t("editor.prompt.label")}</label>
+          <button
+            onClick={() => {
+              usePromptTemplateStore.getState().setApplyTarget("editor");
+              useAppStore.getState().setView("promptCenter");
+            }}
+            className="text-[10px] text-blue-400 hover:underline"
+          >
+            {t("editor.prompt.openPromptCenter")}
+          </button>
+        </div>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the edit you want... e.g. 'Remove the people and keep the water reflection natural'"
+          placeholder={t("editor.prompt.placeholder")}
           className="h-28 w-full resize-none rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
         />
       </div>
@@ -262,14 +276,14 @@ export function PromptPanel() {
       {/* Mask indicator */}
       {maskDataUrl && (
         <div className="flex items-center gap-1.5 rounded bg-amber-900/20 px-2 py-1">
-          <span className="text-[10px] text-amber-400">⬡ Mask active</span>
-          <span className="text-[10px] text-neutral-500">— local region edit</span>
+          <span className="text-[10px] text-amber-400">{t("editor.canvasLabels.maskActive")}</span>
+          <span className="text-[10px] text-neutral-500">{t("editor.canvasLabels.maskActiveSuffix")}</span>
         </div>
       )}
 
       {/* Upload proxy profile indicator */}
       <div className="flex items-center justify-between rounded bg-neutral-800/50 px-2 py-1">
-        <span className="text-[10px] text-neutral-500">Upload proxy</span>
+        <span className="text-[10px] text-neutral-500">{t("editor.prompt.uploadProxy")}</span>
         <span className="text-[10px] text-neutral-300 capitalize">
           {uploadProxyProfile.replace("_", " ")}
         </span>
@@ -284,7 +298,7 @@ export function PromptPanel() {
             onChange={(e) => setPreserveIdentity(e.target.checked)}
             className="rounded accent-blue-500"
           />
-          Preserve face & identity
+          {t("editor.prompt.preserveIdentity")}
         </label>
         <label className="flex items-center gap-2 text-[11px] text-neutral-400">
           <input
@@ -293,7 +307,7 @@ export function PromptPanel() {
             onChange={(e) => setPreserveComposition(e.target.checked)}
             className="rounded accent-blue-500"
           />
-          Preserve composition
+          {t("editor.prompt.preserveComposition")}
         </label>
       </div>
 
@@ -301,15 +315,14 @@ export function PromptPanel() {
       <div className="rounded bg-neutral-800/50 p-2">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-wide text-neutral-500">
-            Style profile
+            {t("editor.prompt.stylePanel")}
           </span>
           {activeStyle && (
             <button
               onClick={() => setSelectedStyleId(null)}
               className="text-[9px] text-neutral-500 hover:text-neutral-200"
-              title="Skip the default style for this edit"
             >
-              Clear
+              {t("common.clear")}
             </button>
           )}
         </div>
@@ -326,11 +339,11 @@ export function PromptPanel() {
           }}
           className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
         >
-          <option value="__none__">No style (raw prompt)</option>
+          <option value="__none__">{t("editor.prompt.noStyleOption")}</option>
           {styles.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-              {defaultStyleId === s.id ? " (default)" : ""}
+              {defaultStyleId === s.id ? t("editor.prompt.defaultSuffix") : ""}
             </option>
           ))}
         </select>
@@ -344,11 +357,13 @@ export function PromptPanel() {
       {/* MVP3: Candidate generation */}
       <div className="rounded bg-neutral-800/50 p-2">
         <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
-          Multi-version candidates
+          {t("editor.prompt.candidatePanel")}
         </span>
         <div className="grid grid-cols-2 gap-1.5">
           <div>
-            <label className="mb-0.5 block text-[9px] text-neutral-500">Count</label>
+            <label className="mb-0.5 block text-[9px] text-neutral-500">
+              {t("editor.prompt.candidateCount")}
+            </label>
             <div className="flex gap-0.5">
               {([2, 3, 4] as const).map((n) => (
                 <button
@@ -366,18 +381,20 @@ export function PromptPanel() {
             </div>
           </div>
           <div>
-            <label className="mb-0.5 block text-[9px] text-neutral-500">Mode</label>
+            <label className="mb-0.5 block text-[9px] text-neutral-500">
+              {t("editor.prompt.candidateMode")}
+            </label>
             <select
               value={candidateMode}
               onChange={(e) => setCandidateMode(e.target.value as CandidateMode)}
               className="w-full rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-200"
             >
-              <option value="natural">Natural</option>
-              <option value="cinematic">Cinematic</option>
-              <option value="clean_bright">Clean &amp; Bright</option>
-              <option value="moody">Moody</option>
-              <option value="warm">Warm</option>
-              <option value="cool">Cool</option>
+              <option value="natural">{t("editor.prompt.modes.natural")}</option>
+              <option value="cinematic">{t("editor.prompt.modes.cinematic")}</option>
+              <option value="clean_bright">{t("editor.prompt.modes.cleanBright")}</option>
+              <option value="moody">{t("editor.prompt.modes.moody")}</option>
+              <option value="warm">{t("editor.prompt.modes.warm")}</option>
+              <option value="cool">{t("editor.prompt.modes.cool")}</option>
             </select>
           </div>
         </div>
@@ -386,7 +403,9 @@ export function PromptPanel() {
           disabled={!prompt.trim() || candidateRunning}
           className="mt-2 w-full rounded bg-purple-600 px-2 py-1 text-[10px] font-medium text-white transition-colors hover:bg-purple-500 disabled:opacity-40"
         >
-          {candidateRunning ? "Running candidates..." : `Generate ${candidateCount} candidates`}
+          {candidateRunning
+            ? t("editor.prompt.runningCandidates")
+            : t("editor.prompt.generateCandidates", { count: candidateCount })}
         </button>
       </div>
 
@@ -397,14 +416,14 @@ export function PromptPanel() {
           disabled={!prompt.trim()}
           className="flex-1 rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Generate Draft
+          {t("editor.prompt.generateDraft")}
         </button>
         <button
           onClick={() => handleGenerate("final")}
           disabled={!prompt.trim()}
           className="flex-1 rounded bg-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-600 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Final
+          {t("editor.prompt.final")}
         </button>
       </div>
 
@@ -418,7 +437,7 @@ export function PromptPanel() {
 
       {/* Quick presets */}
       <div className="mt-2 border-t border-neutral-800 pt-2">
-        <label className="mb-1.5 block text-[11px] text-neutral-400">Presets</label>
+        <label className="mb-1.5 block text-[11px] text-neutral-400">{t("editor.prompt.presets")}</label>
         <PresetsList
           onApply={applyPreset}
           onSaveCustom={savePromptAsPreset}
@@ -428,7 +447,7 @@ export function PromptPanel() {
 
       {/* Recent prompts */}
       <div className="mt-2 border-t border-neutral-800 pt-2">
-        <label className="mb-1.5 block text-[11px] text-neutral-400">Recent</label>
+        <label className="mb-1.5 block text-[11px] text-neutral-400">{t("editor.prompt.recent")}</label>
         <RecentPromptsList onSelect={setPrompt} />
       </div>
     </div>

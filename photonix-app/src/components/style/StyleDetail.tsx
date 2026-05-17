@@ -6,6 +6,7 @@ import {
   upsertStyleProfile,
 } from "@/services/tauri/styles";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import type { StyleProfile } from "@/types";
 
 export function StyleDetail({
@@ -15,6 +16,7 @@ export function StyleDetail({
   style: StyleProfile;
   onDeleted: () => void;
 }) {
+  const { t } = useTranslation();
   const updateStyle = useStyleStore((s) => s.updateStyle);
   const removeStyle = useStyleStore((s) => s.removeStyle);
   const setDefaultStyleId = useStyleStore((s) => s.setDefaultStyleId);
@@ -109,10 +111,10 @@ export function StyleDetail({
           />
           <p className="mt-0.5 text-[10px] text-neutral-500">
             {style.source === "preset"
-              ? "Built-in (read-only). Duplicate to edit."
+              ? t("style.sourcePreset")
               : style.source === "reference_analysis"
-                ? "From reference image analysis"
-                : "Manually created"}
+                ? t("style.sourceReferenceAnalysis")
+                : t("style.sourceManual")}
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -120,14 +122,14 @@ export function StyleDetail({
             onClick={handleDuplicate}
             className="rounded bg-neutral-800 px-2 py-1 text-[10px] text-neutral-300 hover:bg-neutral-700"
           >
-            Duplicate
+            {t("style.duplicate")}
           </button>
           {!isBuiltIn && (
             <button
               onClick={handleDelete}
               className="rounded bg-red-700/60 px-2 py-1 text-[10px] text-red-100 hover:bg-red-700"
             >
-              Delete
+              {t("style.delete")}
             </button>
           )}
         </div>
@@ -135,7 +137,7 @@ export function StyleDetail({
 
       {/* Category and color mood */}
       <div className="grid grid-cols-2 gap-2">
-        <Field label="Category">
+        <Field label={t("style.fields.category")}>
           <select
             value={draft.category}
             onChange={(e) =>
@@ -144,14 +146,14 @@ export function StyleDetail({
             disabled={isBuiltIn}
             className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 disabled:opacity-70"
           >
-            <option value="landscape">Landscape</option>
-            <option value="portrait">Portrait</option>
-            <option value="travel">Travel</option>
-            <option value="custom">Custom</option>
+            <option value="landscape">{t("style.categories.landscape")}</option>
+            <option value="portrait">{t("style.categories.portrait")}</option>
+            <option value="travel">{t("style.categories.travel")}</option>
+            <option value="custom">{t("style.categories.custom")}</option>
           </select>
         </Field>
 
-        <Field label="Default style">
+        <Field label={t("style.fields.defaultStyle")}>
           <button
             onClick={handleSetDefault}
             className={`w-full rounded px-2 py-1 text-xs ${
@@ -160,12 +162,12 @@ export function StyleDetail({
                 : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
             }`}
           >
-            {defaultStyleId === style.id ? "Default" : "Set as default"}
+            {defaultStyleId === style.id ? t("style.isDefault") : t("style.setAsDefault")}
           </button>
         </Field>
       </div>
 
-      <Field label="Description">
+      <Field label={t("style.fields.description")}>
         <textarea
           value={draft.description}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
@@ -175,7 +177,7 @@ export function StyleDetail({
         />
       </Field>
 
-      <Field label="Style summary">
+      <Field label={t("style.fields.summary")}>
         <textarea
           value={draft.styleSummary}
           onChange={(e) => setDraft({ ...draft, styleSummary: e.target.value })}
@@ -185,7 +187,7 @@ export function StyleDetail({
         />
       </Field>
 
-      <Field label="Positive style prompt">
+      <Field label={t("style.fields.positivePrompt")}>
         <textarea
           value={draft.positivePrompt}
           onChange={(e) => setDraft({ ...draft, positivePrompt: e.target.value })}
@@ -195,7 +197,7 @@ export function StyleDetail({
         />
       </Field>
 
-      <Field label="Negative constraints">
+      <Field label={t("style.fields.negativeConstraints")}>
         <textarea
           value={draft.negativePrompt}
           onChange={(e) => setDraft({ ...draft, negativePrompt: e.target.value })}
@@ -207,7 +209,7 @@ export function StyleDetail({
 
       {/* Color mood */}
       <div className="grid grid-cols-3 gap-2">
-        <Field label="Temperature">
+        <Field label={t("style.fields.temperature")}>
           <select
             value={draft.colorMood?.temperature ?? "neutral"}
             onChange={(e) =>
@@ -222,13 +224,13 @@ export function StyleDetail({
             disabled={isBuiltIn}
             className="w-full rounded bg-neutral-800 px-2 py-1 text-xs disabled:opacity-70"
           >
-            <option value="cool">Cool</option>
-            <option value="neutral">Neutral</option>
-            <option value="warm">Warm</option>
+            <option value="cool">{t("style.temperature.cool")}</option>
+            <option value="neutral">{t("style.temperature.neutral")}</option>
+            <option value="warm">{t("style.temperature.warm")}</option>
           </select>
         </Field>
 
-        <Field label="Saturation">
+        <Field label={t("style.fields.saturation")}>
           <select
             value={draft.colorMood?.saturation ?? "natural"}
             onChange={(e) =>
@@ -243,13 +245,13 @@ export function StyleDetail({
             disabled={isBuiltIn}
             className="w-full rounded bg-neutral-800 px-2 py-1 text-xs disabled:opacity-70"
           >
-            <option value="low">Low</option>
-            <option value="natural">Natural</option>
-            <option value="rich">Rich</option>
+            <option value="low">{t("style.saturation.low")}</option>
+            <option value="natural">{t("style.saturation.natural")}</option>
+            <option value="rich">{t("style.saturation.rich")}</option>
           </select>
         </Field>
 
-        <Field label="Contrast">
+        <Field label={t("style.fields.contrast")}>
           <select
             value={draft.colorMood?.contrast ?? "balanced"}
             onChange={(e) =>
@@ -264,9 +266,9 @@ export function StyleDetail({
             disabled={isBuiltIn}
             className="w-full rounded bg-neutral-800 px-2 py-1 text-xs disabled:opacity-70"
           >
-            <option value="soft">Soft</option>
-            <option value="balanced">Balanced</option>
-            <option value="strong">Strong</option>
+            <option value="soft">{t("style.contrast.soft")}</option>
+            <option value="balanced">{t("style.contrast.balanced")}</option>
+            <option value="strong">{t("style.contrast.strong")}</option>
           </select>
         </Field>
       </div>
@@ -281,7 +283,7 @@ export function StyleDetail({
             disabled={isBuiltIn}
             className="rounded accent-blue-500"
           />
-          Preserve face & identity by default
+          {t("style.fields.preserveIdentity")}
         </label>
         <label className="flex items-center gap-2 text-[11px] text-neutral-400">
           <input
@@ -291,7 +293,7 @@ export function StyleDetail({
             disabled={isBuiltIn}
             className="rounded accent-blue-500"
           />
-          Preserve composition by default
+          {t("style.fields.preserveComposition")}
         </label>
       </div>
 
@@ -303,14 +305,14 @@ export function StyleDetail({
             disabled={!dirty}
             className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
           >
-            Reset
+            {t("common.reset")}
           </button>
           <button
             onClick={handleSave}
             disabled={!dirty || saving}
             className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40"
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("style.analyzer.saving") : t("common.save")}
           </button>
         </div>
       )}

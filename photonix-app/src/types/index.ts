@@ -147,7 +147,8 @@ export interface ImageEditResult {
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
-export type AppView = "generate" | "library" | "editor" | "style" | "settings";
+export type AppView = "generate" | "library" | "editor" | "style" | "promptCenter" | "settings";
+export type Language = "en" | "zh-CN";
 
 // ─── Image Generation ────────────────────────────────────────────────────────
 
@@ -468,3 +469,45 @@ export const DEFAULT_FILENAME_TEMPLATE: FilenameTemplate =
 // ─── MVP3: Batch Export ──────────────────────────────────────────────────────
 
 export type OverwritePolicy = "skip" | "overwrite" | "rename";
+
+// ─── MVP4: Prompt Center ─────────────────────────────────────────────────────
+
+export type PromptTemplateMode = "generate" | "edit" | "both";
+
+export interface PromptTemplate {
+  id: string;
+  mode: PromptTemplateMode;
+  /**
+   * Category id matched against the i18n `promptCenter.categories.*` keys
+   * for display. Built-in seed values are: landscape, portrait, product,
+   * cinematic, social, illustration, interior, macro, editing, styleTransfer.
+   * User-created templates may use any string; unknown ids are shown verbatim.
+   */
+  category: string;
+  title: string;
+  description?: string;
+  prompt: string;
+  negativePrompt?: string;
+  tags: string[];
+  language: "en" | "zh-CN";
+  sourceName?: string;
+  sourceUrl?: string;
+  isBuiltin: boolean;
+  isFavorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Built-in category ids that get localized via i18n keys. */
+export const PROMPT_CENTER_CATEGORIES: string[] = [
+  "landscape",
+  "portrait",
+  "product",
+  "cinematic",
+  "social",
+  "illustration",
+  "interior",
+  "macro",
+  "editing",
+  "styleTransfer",
+];

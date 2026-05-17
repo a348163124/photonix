@@ -4,9 +4,11 @@ import { useBatchStore } from "@/stores/batchStore";
 import { usePresetsStore } from "@/stores/promptPresets";
 import { useStyleStore } from "@/stores/styleStore";
 import { buildQueueFromSelection, retryItem, runBatch } from "@/services/batchRunner";
+import { useTranslation } from "@/i18n";
 import type { EditPreset, QualityMode } from "@/types";
 
 export function BatchDialog() {
+  const { t } = useTranslation();
   const dialogOpen = useBatchStore((s) => s.dialogOpen);
   const setDialogOpen = useBatchStore((s) => s.setDialogOpen);
   const selectedIds = useBatchStore((s) => s.selectedImageIds);
@@ -57,7 +59,7 @@ export function BatchDialog() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
       <div className="flex max-h-[85vh] w-[640px] flex-col rounded-lg border border-neutral-800 bg-neutral-900 shadow-xl">
         <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2">
-          <h2 className="text-sm font-medium text-neutral-200">Batch Edit</h2>
+          <h2 className="text-sm font-medium text-neutral-200">{t("batch.edit.title")}</h2>
           <button
             onClick={() => setDialogOpen(false)}
             className="rounded text-neutral-500 hover:text-neutral-200"
@@ -70,8 +72,10 @@ export function BatchDialog() {
           {/* Prompt */}
           <div>
             <label className="mb-1 block text-[11px] text-neutral-400">
-              Prompt for {selectedImages.length} image
-              {selectedImages.length === 1 ? "" : "s"}
+              {t("batch.edit.promptLabel", {
+                count: selectedImages.length,
+                plural: selectedImages.length === 1 ? "" : "s",
+              })}
             </label>
             <textarea
               value={prompt}
@@ -79,7 +83,7 @@ export function BatchDialog() {
                 setPrompt(e.target.value);
                 setPresetId(null);
               }}
-              placeholder="Describe the edit to apply to every selected image..."
+              placeholder={t("batch.edit.promptPlaceholder")}
               rows={4}
               className="w-full resize-none rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
             />
@@ -88,7 +92,7 @@ export function BatchDialog() {
           {/* Preset shortcuts */}
           <div className="mt-3">
             <label className="mb-1 block text-[11px] text-neutral-400">
-              Or pick a landscape preset
+              {t("batch.edit.pickPreset")}
             </label>
             <div className="grid grid-cols-2 gap-1">
               {presets
@@ -112,7 +116,7 @@ export function BatchDialog() {
           {/* MVP3: Style profile selector */}
           <div className="mt-3">
             <label className="mb-1 block text-[11px] text-neutral-400">
-              Style profile (applied to every image)
+              {t("batch.edit.styleLabel")}
             </label>
             <select
               value={
@@ -127,11 +131,11 @@ export function BatchDialog() {
               }}
               className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
             >
-              <option value="__none__">No style (raw prompt)</option>
+              <option value="__none__">{t("editor.prompt.noStyleOption")}</option>
               {styles.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
-                  {defaultStyleId === s.id ? " (default)" : ""}
+                  {defaultStyleId === s.id ? t("editor.prompt.defaultSuffix") : ""}
                 </option>
               ))}
             </select>
@@ -139,7 +143,9 @@ export function BatchDialog() {
 
           {/* Quality */}
           <div className="mt-3">
-            <label className="mb-1 block text-[11px] text-neutral-400">Quality</label>
+            <label className="mb-1 block text-[11px] text-neutral-400">
+              {t("batch.edit.qualityLabel")}
+            </label>
             <div className="flex gap-1">
               {(["draft", "final"] as const).map((m) => (
                 <button
@@ -151,7 +157,9 @@ export function BatchDialog() {
                       : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                   }`}
                 >
-                  {m}
+                  {m === "draft"
+                    ? t("editor.prompt.generateDraft").replace(/^Generate /, "")
+                    : t("editor.prompt.final")}
                 </button>
               ))}
             </div>
@@ -162,15 +170,20 @@ export function BatchDialog() {
             <div className="mt-4 border-t border-neutral-800 pt-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[11px] text-neutral-400">
-                  Queue: {items.length} total · {queued} queued · {running} running ·{" "}
-                  {succeeded} succeeded · {failed} failed
+                  {t("batch.edit.queueSummary", {
+                    total: items.length,
+                    queued,
+                    running,
+                    succeeded,
+                    failed,
+                  })}
                 </span>
                 {queued > 0 && (
                   <button
                     onClick={cancelQueued}
                     className="rounded bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400 hover:bg-neutral-700"
                   >
-                    Cancel pending
+                    {t("batch.edit.cancelPending")}
                   </button>
                 )}
               </div>
@@ -197,7 +210,7 @@ export function BatchDialog() {
                         onClick={() => retryItem(it.id)}
                         className="rounded bg-neutral-800 px-1.5 py-0.5 text-[9px] text-neutral-300 hover:bg-neutral-700"
                       >
-                        Retry
+                        {t("common.retry")}
                       </button>
                     )}
                     {(it.status === "succeeded" ||
@@ -222,14 +235,16 @@ export function BatchDialog() {
             onClick={() => setDialogOpen(false)}
             className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700"
           >
-            Close
+            {t("common.close")}
           </button>
           <button
             onClick={handleStart}
             disabled={!prompt.trim() || selectedImages.length === 0 || isRunning}
             className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40"
           >
-            {isRunning ? "Running..." : `Start (${selectedImages.length})`}
+            {isRunning
+              ? t("batch.edit.runningButton")
+              : t("batch.edit.startCount", { count: selectedImages.length })}
           </button>
         </div>
       </div>

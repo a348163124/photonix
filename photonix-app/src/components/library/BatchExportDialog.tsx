@@ -12,9 +12,11 @@ import { applyFilenameTemplate } from "@/services/export/filenameTemplate";
 import { BorderPanel } from "@/components/export/BorderPanel";
 import { WatermarkPanel } from "@/components/export/WatermarkPanel";
 import { toast } from "@/components/ui/Toast";
+import { useTranslation } from "@/i18n";
 import { EXPORT_PRESETS, type ExportPresetId } from "@/types";
 
 export function BatchExportDialog() {
+  const { t } = useTranslation();
   const dialogOpen = useBatchExportStore((s) => s.dialogOpen);
   const setDialogOpen = useBatchExportStore((s) => s.setDialogOpen);
 
@@ -120,7 +122,7 @@ export function BatchExportDialog() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
       <div className="flex max-h-[90vh] w-[760px] flex-col rounded-lg border border-neutral-800 bg-neutral-900 shadow-xl">
         <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2">
-          <h2 className="text-sm font-medium text-neutral-200">Batch Export</h2>
+          <h2 className="text-sm font-medium text-neutral-200">{t("batch.export.title")}</h2>
           <button
             onClick={handleClose}
             disabled={isRunning}
@@ -136,17 +138,19 @@ export function BatchExportDialog() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="mb-1 block text-[11px] text-neutral-400">
-                  Source selection
+                  {t("batch.export.sourceSelectionLabel")}
                 </label>
                 <div className="flex flex-col gap-1">
                   <SelectionRadio
-                    label={`Current versions of selected images (${selectedIds.size > 0 ? selectedIds.size : images.length})`}
+                    label={t("batch.export.sourceCurrentVersions", {
+                      count: selectedIds.size > 0 ? selectedIds.size : images.length,
+                    })}
                     value="current_versions"
                     current={selectionMode}
                     onChange={setSelectionMode}
                   />
                   <SelectionRadio
-                    label="All favorited candidates"
+                    label={t("batch.export.sourceFavorites")}
                     value="favorited_candidates"
                     current={selectionMode}
                     onChange={setSelectionMode}
@@ -156,24 +160,24 @@ export function BatchExportDialog() {
 
               <div>
                 <label className="mb-1 block text-[11px] text-neutral-400">
-                  Output folder
+                  {t("batch.export.outputFolderLabel")}
                 </label>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={pickOutputFolder}
                     className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-700"
                   >
-                    {outputFolder ? "Change" : "Pick folder"}
+                    {outputFolder ? t("batch.export.changeFolder") : t("batch.export.pickFolder")}
                   </button>
                   <span className="flex-1 truncate text-[10px] text-neutral-500" title={outputFolder ?? ""}>
-                    {outputFolder ?? "(none chosen)"}
+                    {outputFolder ?? t("batch.export.noneChosen")}
                   </span>
                 </div>
               </div>
 
               <div>
                 <label className="mb-1 block text-[11px] text-neutral-400">
-                  Export preset
+                  {t("batch.export.presetLabel")}
                 </label>
                 <select
                   value={presetId}
@@ -190,7 +194,7 @@ export function BatchExportDialog() {
 
               <div>
                 <label className="mb-1 block text-[11px] text-neutral-400">
-                  Filename template
+                  {t("batch.export.filenameLabel")}
                 </label>
                 <input
                   value={filenameTemplate}
@@ -206,21 +210,21 @@ export function BatchExportDialog() {
                     ))}
                     {items.length > previewFilenames.length && (
                       <li className="text-[10px] text-neutral-600">
-                        … and {items.length - previewFilenames.length} more
+                        {t("batch.export.moreItems", {
+                          count: items.length - previewFilenames.length,
+                        })}
                       </li>
                     )}
                   </ul>
                 )}
                 <p className="mt-1 text-[9px] text-neutral-600">
-                  Tokens: {"{"}original_name{"}"}, {"{"}style{"}"}, {"{"}preset{"}"},{" "}
-                  {"{"}version_kind{"}"}, {"{"}date{"}"}, {"{"}time{"}"}, {"{"}index{"}"},{" "}
-                  {"{"}ext{"}"}
+                  {t("batch.export.filenameTokensHint")}
                 </p>
               </div>
 
               <div>
                 <label className="mb-1 block text-[11px] text-neutral-400">
-                  When the file already exists
+                  {t("batch.export.onConflictLabel")}
                 </label>
                 <div className="flex gap-1">
                   {(["rename", "overwrite", "skip"] as const).map((p) => (
@@ -233,7 +237,11 @@ export function BatchExportDialog() {
                           : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                       }`}
                     >
-                      {p}
+                      {p === "rename"
+                        ? t("batch.export.policyRename")
+                        : p === "overwrite"
+                          ? t("batch.export.policyOverwrite")
+                          : t("batch.export.policySkip")}
                     </button>
                   ))}
                 </div>
@@ -251,23 +259,29 @@ export function BatchExportDialog() {
           <div className="mt-4 border-t border-neutral-800 pt-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[11px] text-neutral-400">
-                Queue: {items.length} total · {queued} queued · {running} running ·{" "}
-                {succeeded} succeeded · {failed} failed · {skipped} skipped
+                {t("batch.export.queueSummary", {
+                  total: items.length,
+                  queued,
+                  running,
+                  succeeded,
+                  failed,
+                  skipped,
+                })}
               </span>
               <button
                 onClick={refreshPreview}
                 disabled={previewing || isRunning}
                 className="rounded bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400 hover:bg-neutral-700 disabled:opacity-40"
               >
-                {previewing ? "Refreshing..." : "Refresh"}
+                {previewing ? t("batch.export.refreshing") : t("batch.export.refresh")}
               </button>
             </div>
             <div className="max-h-48 overflow-y-auto rounded border border-neutral-800">
               {items.length === 0 && (
                 <p className="px-3 py-4 text-center text-[10px] text-neutral-600">
                   {selectionMode === "favorited_candidates"
-                    ? "No favorited candidates yet. Star one in the editor first."
-                    : "No images selected. Pick images in Library or run on all."}
+                    ? t("batch.export.emptyFavorites")
+                    : t("batch.export.emptyImages")}
                 </p>
               )}
               {items.map((it) => (
@@ -303,21 +317,23 @@ export function BatchExportDialog() {
             disabled={isRunning || items.length === 0}
             className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
           >
-            Clear queue
+            {t("batch.export.clearQueue")}
           </button>
           <button
             onClick={handleClose}
             disabled={isRunning}
             className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
           >
-            Close
+            {t("common.close")}
           </button>
           <button
             onClick={handleStart}
             disabled={items.length === 0 || isRunning || !outputFolder}
             className="rounded bg-green-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-40"
           >
-            {isRunning ? "Exporting..." : `Export ${items.length}`}
+            {isRunning
+              ? t("batch.export.exportingButton")
+              : t("batch.export.exportCount", { count: items.length })}
           </button>
         </div>
       </div>

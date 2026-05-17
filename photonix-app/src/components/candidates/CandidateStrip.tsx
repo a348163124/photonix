@@ -3,9 +3,11 @@ import { useAppStore } from "@/stores/appStore";
 import { useCandidateStore } from "@/stores/candidateStore";
 import { listCandidatesForImage } from "@/services/tauri/candidates";
 import { isTauri } from "@/services/tauri/invoke";
+import { useTranslation } from "@/i18n";
 import { CandidateCard } from "./CandidateCard";
 
 export function CandidateStrip() {
+  const { t } = useTranslation();
   const selectedImageId = useAppStore((s) => s.selectedImageId);
   const byImage = useCandidateStore((s) => s.byImage);
   const runItems = useCandidateStore((s) => s.runItems);
@@ -32,10 +34,15 @@ export function CandidateStrip() {
   return (
     <div className="border-t border-neutral-800 bg-neutral-900/50">
       <div className="flex items-center justify-between px-3 py-1">
-        <span className="text-[11px] text-neutral-400">Candidates</span>
+        <span className="text-[11px] text-neutral-400">{t("editor.candidates.heading")}</span>
         {isRunning && (
           <span className="text-[10px] text-amber-400">
-            Running {runItems.filter((it) => it.status === "running" || it.status === "queued").length} / {runItems.length}
+            {t("editor.candidates.runningSummary", {
+              remaining: runItems.filter(
+                (it) => it.status === "running" || it.status === "queued"
+              ).length,
+              total: runItems.length,
+            })}
           </span>
         )}
       </div>

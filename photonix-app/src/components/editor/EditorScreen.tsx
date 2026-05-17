@@ -3,6 +3,7 @@ import { useAppStore } from "@/stores/appStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { isTauri } from "@/services/tauri/invoke";
 import { loadVersionsForImage } from "@/services/loadVersionsForImage";
+import { useTranslation } from "@/i18n";
 import { Canvas } from "./Canvas";
 import { PromptPanel } from "./PromptPanel";
 import { MaskPanel } from "./MaskPanel";
@@ -13,6 +14,7 @@ import { CandidateStrip } from "@/components/candidates/CandidateStrip";
 type EditorTab = "prompt" | "mask" | "history" | "export";
 
 export function EditorScreen() {
+  const { t } = useTranslation();
   const selectedImageId = useAppStore((s) => s.selectedImageId);
   const images = useAppStore((s) => s.images);
   const versions = useAppStore((s) => s.currentVersions);
@@ -57,12 +59,12 @@ export function EditorScreen() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-neutral-400">No image selected</p>
+          <p className="text-sm text-neutral-400">{t("editor.noImage")}</p>
           <button
             onClick={() => setView("library")}
             className="mt-2 text-xs text-blue-400 hover:underline"
           >
-            Go to Library
+            {t("editor.goToLibrary")}
           </button>
         </div>
       </div>
@@ -87,15 +89,17 @@ export function EditorScreen() {
 
   // Label for what's currently displayed
   const displayLabel = displayVersion
-    ? `${displayVersion.versionKind} version`
-    : "original";
+    ? t("editor.canvasLabels.versionFmt", { kind: displayVersion.versionKind })
+    : t("editor.canvasLabels.original");
 
   return (
     <div className="flex h-full">
       {/* Left rail */}
       <aside className="hidden w-48 flex-col border-r border-neutral-800 bg-neutral-900 lg:flex">
         <div className="border-b border-neutral-800 px-3 py-2">
-          <span className="text-[11px] font-medium text-neutral-400">Images</span>
+          <span className="text-[11px] font-medium text-neutral-400">
+            {t("editor.sidePanelImages")}
+          </span>
         </div>
         <div className="flex-1 overflow-y-auto p-1">
           {images.slice(0, 30).map((img) => (
@@ -121,7 +125,7 @@ export function EditorScreen() {
             onClick={() => setView("library")}
             className="text-xs text-neutral-400 hover:text-neutral-200"
           >
-            ← Library
+            {t("editor.backToLibrary")}
           </button>
           <span className="text-xs text-neutral-600">|</span>
           <span className="text-xs text-neutral-300 truncate max-w-[200px]">
@@ -136,11 +140,16 @@ export function EditorScreen() {
           <div className="flex-1" />
           {brushMode !== "none" && (
             <span className="text-[10px] text-amber-400">
-              Mask: {brushMode === "brush" ? "Paint" : "Erase"} ({brushSize}px)
+              {brushMode === "brush"
+                ? t("editor.canvasLabels.maskPaint")
+                : t("editor.canvasLabels.maskErase")}{" "}
+              ({brushSize}px)
             </span>
           )}
           {maskDataUrl && brushMode === "none" && (
-            <span className="text-[10px] text-green-400">Mask ready</span>
+            <span className="text-[10px] text-green-400">
+              {t("editor.canvasLabels.maskReady")}
+            </span>
           )}
         </div>
 
@@ -172,7 +181,7 @@ export function EditorScreen() {
                   : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
-              {tab}
+              {t(`editor.tabs.${tab}` as never)}
             </button>
           ))}
         </div>

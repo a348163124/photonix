@@ -1,12 +1,6 @@
 import { useStyleStore } from "@/stores/styleStore";
+import { useTranslation } from "@/i18n";
 import type { StyleCategory } from "@/types";
-
-const CATEGORY_LABEL: Record<StyleCategory, string> = {
-  landscape: "Landscape",
-  portrait: "Portrait",
-  travel: "Travel",
-  custom: "Custom",
-};
 
 export function StyleList({
   selectedId,
@@ -15,6 +9,7 @@ export function StyleList({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const styles = useStyleStore((s) => s.styles);
   const defaultStyleId = useStyleStore((s) => s.defaultStyleId);
 
@@ -26,6 +21,8 @@ export function StyleList({
   }, {});
 
   const categories: StyleCategory[] = ["landscape", "portrait", "travel", "custom"];
+  const categoryLabel = (cat: StyleCategory) =>
+    t(`style.categories.${cat}` as never);
 
   return (
     <div className="flex-1 overflow-y-auto p-1">
@@ -35,7 +32,7 @@ export function StyleList({
         return (
           <div key={cat} className="mb-2">
             <div className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-wide text-neutral-600">
-              {CATEGORY_LABEL[cat]}
+              {categoryLabel(cat)}
             </div>
             {list.map((style) => (
               <button
@@ -52,12 +49,12 @@ export function StyleList({
                     <span className="text-[12px] text-neutral-200">{style.name}</span>
                     {defaultStyleId === style.id && (
                       <span className="rounded bg-blue-600/40 px-1 py-0 text-[8px] font-medium text-blue-200">
-                        DEFAULT
+                        {t("style.defaultBadge")}
                       </span>
                     )}
                     {style.source === "preset" && (
                       <span className="rounded bg-neutral-700 px-1 py-0 text-[8px] text-neutral-400">
-                        BUILT-IN
+                        {t("style.builtInBadge")}
                       </span>
                     )}
                   </div>

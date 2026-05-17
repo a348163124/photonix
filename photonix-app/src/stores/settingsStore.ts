@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ExportPresetId, ProviderConfig, UploadProxyProfile } from "@/types";
+import type { ExportPresetId, Language, ProviderConfig, UploadProxyProfile } from "@/types";
 
 interface SettingsState {
   /** Non-secret provider config (baseUrl + model names). */
@@ -19,6 +19,10 @@ interface SettingsState {
   setUploadProxyProfile: (p: UploadProxyProfile) => void;
   defaultExportPreset: ExportPresetId;
   setDefaultExportPreset: (p: ExportPresetId) => void;
+
+  // MVP4: UI language
+  language: Language;
+  setLanguage: (language: Language) => void;
 }
 
 const defaultProvider: ProviderConfig = {
@@ -44,4 +48,15 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   defaultExportPreset: "wechat_moments",
   setDefaultExportPreset: (p) => set({ defaultExportPreset: p }),
+
+  language: detectDefaultLanguage(),
+  setLanguage: (language) => set({ language }),
 }));
+
+function detectDefaultLanguage(): Language {
+  if (typeof navigator !== "undefined") {
+    const locale = navigator.language || navigator.languages?.[0] || "";
+    if (locale.toLowerCase().startsWith("zh")) return "zh-CN";
+  }
+  return "en";
+}

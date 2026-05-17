@@ -1,8 +1,10 @@
 import { isTauri, invoke } from "@/services/tauri/invoke";
 import { loadSetting } from "@/services/tauri/settings";
 import { listStyleProfiles, loadDefaultStyleId } from "@/services/tauri/styles";
+import { seedBuiltinPromptTemplates } from "@/services/tauri/promptTemplates";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { BUILT_IN_STYLES, useStyleStore } from "@/stores/styleStore";
+import { coerceLanguage, useI18nStore, type Language } from "@/i18n";
 import type { ExportPresetId, UploadProxyProfile } from "@/types";
 
 /** Non-secret config persisted in SQLite. */
@@ -97,5 +99,26 @@ export async function bootstrapSettings(): Promise<void> {
     }
   } catch (err) {
     console.warn("Failed to load style profiles:", err);
+  }
+
+  // MVP4: language preference. Fall back to OS detection — already done at
+  // store-creation time, so we only need to override when a saved choice
+  // exists.
+  try {
+    const saved = await loadSetting<Language>("ui_language");
+    const coerced = coerceLanguage(saved);
+    if (coerced) {
+      useI18nStore.getState().setLanguage(coerced);
+    }
+  } catch (err) {
+    console.warn("Failed to load language preference:", err);
+  }
+
+  // MVP4: seed built-in prompt templates on first run. Idempotent — the
+  // Rust side skips ids that already exist.
+  try {
+    await seedBuiltinPromptTemplates();
+  } catch (err) {
+    console.warn("Failed to seed built-in prompt templates:", err);
   }
 }

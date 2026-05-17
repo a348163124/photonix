@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useI18nStore, useTranslation, type Language } from "@/i18n";
 import { isTauri } from "@/services/tauri/invoke";
 import { saveSetting, saveApiKey, hasApiKey } from "@/services/tauri/settings";
 import { checkProviderCompatibility } from "@/services/provider/compatibility";
@@ -23,15 +24,17 @@ interface StoredEditingPrefs {
   defaultExportPreset: ExportPresetId;
 }
 
-type SettingsCategory = "provider" | "editing" | "export";
+type SettingsCategory = "provider" | "editing" | "export" | "language";
 
-const CATEGORIES: { id: SettingsCategory; label: string }[] = [
-  { id: "provider", label: "Provider & Models" },
-  { id: "editing", label: "Editing" },
-  { id: "export", label: "Export" },
+const CATEGORY_KEYS: { id: SettingsCategory; tKey: string }[] = [
+  { id: "provider", tKey: "settings.categories.provider" },
+  { id: "editing", tKey: "settings.categories.editing" },
+  { id: "export", tKey: "settings.categories.export" },
+  { id: "language", tKey: "settings.categories.language" },
 ];
 
 export function SettingsScreen() {
+  const { t } = useTranslation();
   const provider = useSettingsStore((s) => s.provider);
   const hasKey = useSettingsStore((s) => s.hasApiKey);
   const uploadProxyProfile = useSettingsStore((s) => s.uploadProxyProfile);
@@ -157,7 +160,7 @@ export function SettingsScreen() {
     <div className="flex h-full">
       <nav className="w-44 border-r border-neutral-800 p-3">
         <ul className="flex flex-col gap-1">
-          {CATEGORIES.map((cat) => (
+          {CATEGORY_KEYS.map((cat) => (
             <li key={cat.id}>
               <button
                 onClick={() => setCategory(cat.id)}
@@ -167,7 +170,7 @@ export function SettingsScreen() {
                     : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 }`}
               >
-                {cat.label}
+                {t(cat.tKey)}
               </button>
             </li>
           ))}
@@ -193,6 +196,7 @@ export function SettingsScreen() {
           <EditingSection saved={saved} onSave={handleSave} />
         )}
         {category === "export" && <ExportSection saved={saved} onSave={handleSave} />}
+        {category === "language" && <LanguageSection />}
       </div>
     </div>
   );
@@ -221,15 +225,18 @@ function ProviderSection({
   onSave: () => void;
   onValidate: () => void;
 }) {
+  const { t } = useTranslation();
   const provider = useSettingsStore((s) => s.provider);
   const setProvider = useSettingsStore((s) => s.setProvider);
 
   return (
     <div className="flex max-w-md flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">Provider Configuration</h2>
+      <h2 className="text-sm font-medium text-neutral-200">
+        {t("settings.provider.heading")}
+      </h2>
 
       <Field
-        label="Base URL"
+        label={t("settings.provider.baseUrl")}
         value={provider.baseUrl}
         onChange={(v) => setProvider({ baseUrl: v })}
         placeholder="https://api.openai.com/v1"
@@ -238,16 +245,22 @@ function ProviderSection({
       {/* API key — local-only field */}
       <div>
         <label className="mb-1 flex items-center justify-between text-[11px] text-neutral-400">
-          <span>API Key</span>
+          <span>{t("settings.provider.apiKey")}</span>
           {hasKey && (
-            <span className="text-[10px] text-green-400">✓ Saved</span>
+            <span className="text-[10px] text-green-400">
+              {t("settings.provider.apiKeySaved")}
+            </span>
           )}
         </label>
         <input
           type="password"
           value={apiKeyDraft}
           onChange={(e) => setApiKeyDraft(e.target.value)}
-          placeholder={hasKey ? "•••••••• (already saved — type to replace)" : "sk-..."}
+          placeholder={
+            hasKey
+              ? t("settings.provider.apiKeyPlaceholderSaved")
+              : t("settings.provider.apiKeyPlaceholderEmpty")
+          }
           autoComplete="off"
           spellCheck={false}
           className="w-full rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-neutral-600"
@@ -257,42 +270,41 @@ function ProviderSection({
             onClick={onClearKey}
             className="mt-1 text-[10px] text-neutral-500 hover:text-red-400"
           >
-            Clear saved key
+            {t("settings.provider.clearKey")}
           </button>
         )}
       </div>
 
       <div className="border-t border-neutral-800 pt-4">
-        <h3 className="mb-3 text-xs font-medium text-neutral-300">Models</h3>
+        <h3 className="mb-3 text-xs font-medium text-neutral-300">
+          {t("settings.provider.modelsHeading")}
+        </h3>
       </div>
 
       <Field
-        label="Image Model"
+        label={t("settings.provider.imageModel")}
         value={provider.imageModel}
         onChange={(v) => setProvider({ imageModel: v })}
       />
       <Field
-        label="Text Model (Prompt Compiler)"
+        label={t("settings.provider.textModel")}
         value={provider.textModel}
         onChange={(v) => setProvider({ textModel: v })}
       />
       <Field
-        label="Fallback Text Model"
+        label={t("settings.provider.fallbackTextModel")}
         value={provider.fallbackTextModel}
         onChange={(v) => setProvider({ fallbackTextModel: v })}
       />
       <div>
         <Field
-          label="Vision Model (Reference Style Analysis)"
+          label={t("settings.provider.visionModel")}
           value={provider.visionModel}
           onChange={(v) => setProvider({ visionModel: v })}
-          placeholder="gpt-4o or another vision-capable chat model"
+          placeholder={t("settings.provider.visionModelPlaceholder")}
         />
         <p className="mt-1 text-[10px] text-neutral-600">
-          Used only when analyzing a reference style image. Leave blank to fall
-          back to the Text Model. Many providers expose vision under a separate
-          model id, so set this explicitly if reference analysis fails with a
-          "model does not support image input" error.
+          {t("settings.provider.visionModelHelp")}
         </p>
       </div>
 
@@ -301,21 +313,22 @@ function ProviderSection({
           onClick={onSave}
           className="rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
         >
-          {saved ? "✓ Saved" : "Save Settings"}
+          {saved ? t("common.saved") : t("common.save")}
         </button>
         <button
           onClick={onValidate}
           disabled={validating || (!hasKey && !apiKeyDraft)}
           className="rounded bg-neutral-700 px-4 py-1.5 text-xs font-medium text-neutral-200 hover:bg-neutral-600 transition-colors disabled:opacity-40"
         >
-          {validating ? "Validating..." : "Validate Connection"}
+          {validating ? t("settings.provider.validating") : t("settings.provider.validate")}
         </button>
       </div>
 
       {validationResult && (
         <p
           className={`text-xs ${
-            validationResult.startsWith("Connection")
+            validationResult.startsWith("Connection") ||
+            validationResult === t("settings.provider.connectionSuccess")
               ? "text-green-400"
               : "text-red-400"
           }`}
@@ -334,28 +347,27 @@ function ProviderSection({
       )}
 
       <p className="text-[10px] text-neutral-600 mt-2">
-        Your API key is stored in the Windows Credential Manager (or your platform's
-        equivalent secret store). It is never written to the database, never logged,
-        and is read only by the native layer when an edit, generation, or validation
-        request needs it.
+        {t("settings.provider.keyHelp")}
       </p>
     </div>
   );
 }
 
 function EditingSection({ saved, onSave }: { saved: boolean; onSave: () => void }) {
+  const { t } = useTranslation();
   const uploadProxyProfile = useSettingsStore((s) => s.uploadProxyProfile);
   const setUploadProxyProfile = useSettingsStore((s) => s.setUploadProxyProfile);
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">Editing</h2>
-      <p className="text-[11px] text-neutral-500">
-        AI edit requests upload a compressed proxy of your photo. This profile
-        controls how large that proxy can be. Original files are never modified.
-      </p>
+      <h2 className="text-sm font-medium text-neutral-200">
+        {t("settings.editing.heading")}
+      </h2>
+      <p className="text-[11px] text-neutral-500">{t("settings.editing.proxyHelp")}</p>
 
-      <label className="block text-[11px] text-neutral-400">Upload Proxy Profile</label>
+      <label className="block text-[11px] text-neutral-400">
+        {t("settings.editing.proxyProfileLabel")}
+      </label>
       <div className="flex flex-col gap-1">
         {PROXY_PROFILES.map((p) => (
           <button
@@ -382,24 +394,27 @@ function EditingSection({ saved, onSave }: { saved: boolean; onSave: () => void 
         onClick={onSave}
         className="mt-2 w-fit rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
       >
-        {saved ? "✓ Saved" : "Save Settings"}
+        {saved ? t("common.saved") : t("common.save")}
       </button>
     </div>
   );
 }
 
 function ExportSection({ saved, onSave }: { saved: boolean; onSave: () => void }) {
+  const { t } = useTranslation();
   const defaultExportPreset = useSettingsStore((s) => s.defaultExportPreset);
   const setDefaultExportPreset = useSettingsStore((s) => s.setDefaultExportPreset);
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <h2 className="text-sm font-medium text-neutral-200">Export</h2>
-      <p className="text-[11px] text-neutral-500">
-        Choose the default export preset. You can still override it on each export.
-      </p>
+      <h2 className="text-sm font-medium text-neutral-200">
+        {t("settings.export.heading")}
+      </h2>
+      <p className="text-[11px] text-neutral-500">{t("settings.export.help")}</p>
 
-      <label className="block text-[11px] text-neutral-400">Default Export Preset</label>
+      <label className="block text-[11px] text-neutral-400">
+        {t("settings.export.defaultPresetLabel")}
+      </label>
       <div className="flex flex-col gap-1">
         {EXPORT_PRESETS.map((p) => (
           <button
@@ -421,8 +436,68 @@ function ExportSection({ saved, onSave }: { saved: boolean; onSave: () => void }
         onClick={onSave}
         className="mt-2 w-fit rounded bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
       >
-        {saved ? "✓ Saved" : "Save Settings"}
+        {saved ? t("common.saved") : t("common.save")}
       </button>
+    </div>
+  );
+}
+
+function LanguageSection() {
+  const { t } = useTranslation();
+  const language = useI18nStore((s) => s.language);
+  const setLanguage = useI18nStore((s) => s.setLanguage);
+  const [savedToast, setSavedToast] = useState(false);
+
+  async function pickLanguage(lang: Language) {
+    setLanguage(lang);
+    if (isTauri()) {
+      try {
+        await saveSetting("ui_language", lang);
+      } catch (err) {
+        console.warn("Failed to persist language:", err);
+      }
+    }
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2000);
+  }
+
+  const options: { id: Language; labelKey: string }[] = [
+    { id: "en", labelKey: "settings.language.en" },
+    { id: "zh-CN", labelKey: "settings.language.zh" },
+  ];
+
+  return (
+    <div className="flex max-w-lg flex-col gap-4">
+      <h2 className="text-sm font-medium text-neutral-200">
+        {t("settings.language.heading")}
+      </h2>
+      <p className="text-[11px] text-neutral-500">{t("settings.language.help")}</p>
+
+      <label className="block text-[11px] text-neutral-400">
+        {t("settings.language.label")}
+      </label>
+      <div className="flex flex-col gap-1">
+        {options.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => pickLanguage(opt.id)}
+            className={`rounded px-3 py-2 text-left text-xs transition-colors ${
+              language === opt.id
+                ? "bg-blue-600/30 text-blue-200 ring-1 ring-blue-500/50"
+                : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+            }`}
+          >
+            {t(opt.labelKey)}
+          </button>
+        ))}
+      </div>
+
+      {savedToast && (
+        <p className="text-[11px] text-green-400">{t("common.saved")}</p>
+      )}
+      <p className="text-[10px] text-neutral-600">
+        {t("settings.language.restartHint")}
+      </p>
     </div>
   );
 }

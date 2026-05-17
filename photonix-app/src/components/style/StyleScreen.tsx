@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStyleStore } from "@/stores/styleStore";
+import { useTranslation } from "@/i18n";
 import { StyleList } from "./StyleList";
 import { StyleDetail } from "./StyleDetail";
 import { ReferenceStyleAnalyzer } from "./ReferenceStyleAnalyzer";
@@ -7,6 +8,7 @@ import { ReferenceStyleAnalyzer } from "./ReferenceStyleAnalyzer";
 type Tab = "library" | "analyze";
 
 export function StyleScreen() {
+  const { t } = useTranslation();
   const styles = useStyleStore((s) => s.styles);
   const [tab, setTab] = useState<Tab>("library");
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -20,17 +22,17 @@ export function StyleScreen() {
       {/* Left list */}
       <div className="flex w-72 flex-col border-r border-neutral-800 bg-neutral-900">
         <div className="flex border-b border-neutral-800">
-          {(["library", "analyze"] as Tab[]).map((t) => (
+          {(["library", "analyze"] as Tab[]).map((tabId) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabId}
+              onClick={() => setTab(tabId)}
               className={`flex-1 py-2 text-xs capitalize transition-colors ${
-                tab === t
+                tab === tabId
                   ? "border-b-2 border-blue-500 text-neutral-200"
                   : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
-              {t === "library" ? "My Styles" : "Analyze Reference"}
+              {tabId === "library" ? t("style.libraryTab") : t("style.analyzeTab")}
             </button>
           ))}
         </div>
@@ -44,14 +46,8 @@ export function StyleScreen() {
         )}
         {tab === "analyze" && (
           <div className="p-3 text-[11px] text-neutral-400">
-            <p className="mb-2">
-              Pick a reference photo to extract its style as a reusable profile.
-            </p>
-            <p className="text-[10px] text-neutral-500">
-              The reference is sent to your configured provider as a small JPEG
-              proxy. Only color, light, and tone are described — never people,
-              places, or content.
-            </p>
+            <p className="mb-2">{t("style.pickReferenceHint")}</p>
+            <p className="text-[10px] text-neutral-500">{t("style.privacyShort")}</p>
           </div>
         )}
       </div>
@@ -67,7 +63,7 @@ export function StyleScreen() {
           />
         )}
         {tab === "library" && !selected && (
-          <p className="text-xs text-neutral-500">Select a style on the left.</p>
+          <p className="text-xs text-neutral-500">{t("promptCenter.detail.noTemplate")}</p>
         )}
         {tab === "analyze" && (
           <ReferenceStyleAnalyzer
