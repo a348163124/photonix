@@ -51,6 +51,7 @@ export function PromptPanel() {
   const selectedStyleId = useStyleStore((s) => s.selectedStyleId);
   const defaultStyleId = useStyleStore((s) => s.defaultStyleId);
   const setSelectedStyleId = useStyleStore((s) => s.setSelectedStyleId);
+  const selectedStyle = useStyleStore((s) => s.selectedStyle);
 
   const candidateRunning = useCandidateStore((s) => s.isRunning);
 
@@ -66,8 +67,7 @@ export function PromptPanel() {
   const [candidateCount, setCandidateCount] = useState<2 | 3 | 4>(3);
   const [candidateMode, setCandidateMode] = useState<CandidateMode>("natural");
 
-  const activeStyle: StyleProfile | null =
-    styles.find((s) => s.id === (selectedStyleId ?? defaultStyleId)) ?? null;
+  const activeStyle: StyleProfile | null = selectedStyle();
 
   const selectedImage = images.find((img) => img.id === selectedImageId);
 
@@ -307,17 +307,26 @@ export function PromptPanel() {
             <button
               onClick={() => setSelectedStyleId(null)}
               className="text-[9px] text-neutral-500 hover:text-neutral-200"
+              title="Skip the default style for this edit"
             >
               Clear
             </button>
           )}
         </div>
         <select
-          value={selectedStyleId ?? defaultStyleId ?? ""}
-          onChange={(e) => setSelectedStyleId(e.target.value || null)}
+          value={
+            selectedStyleId === null
+              ? "__none__"
+              : (selectedStyleId ?? defaultStyleId ?? "__none__")
+          }
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "__none__") setSelectedStyleId(null);
+            else setSelectedStyleId(v);
+          }}
           className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
         >
-          <option value="">No style (raw prompt)</option>
+          <option value="__none__">No style (raw prompt)</option>
           {styles.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}

@@ -115,11 +115,19 @@ export function BatchDialog() {
               Style profile (applied to every image)
             </label>
             <select
-              value={selectedStyleId ?? defaultStyleId ?? ""}
-              onChange={(e) => setSelectedStyleId(e.target.value || null)}
+              value={
+                selectedStyleId === null
+                  ? "__none__"
+                  : (selectedStyleId ?? defaultStyleId ?? "__none__")
+              }
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "__none__") setSelectedStyleId(null);
+                else setSelectedStyleId(v);
+              }}
               className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
             >
-              <option value="">No style (raw prompt)</option>
+              <option value="__none__">No style (raw prompt)</option>
               {styles.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}

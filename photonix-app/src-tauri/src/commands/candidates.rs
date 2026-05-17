@@ -82,6 +82,40 @@ pub fn list_candidates_for_image(
     rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
 }
 
+/// List every favorited candidate across all images. Used by batch export
+/// when the user picks "all favorited candidates".
+#[tauri::command]
+pub fn list_favorite_candidates(
+    db: State<'_, Database>,
+) -> Result<Vec<EditCandidateRow>, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, image_id, version_id, candidate_group_id, label, prompt_modifier,
+                    style_profile_id, is_favorite, created_at
+             FROM edit_candidates WHERE is_favorite = 1 ORDER BY created_at DESC",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(EditCandidateRow {
+                id: row.get(0)?,
+                image_id: row.get(1)?,
+                version_id: row.get(2)?,
+                candidate_group_id: row.get(3)?,
+                label: row.get(4)?,
+                prompt_modifier: row.get(5)?,
+                style_profile_id: row.get(6)?,
+                is_favorite: row.get::<_, i32>(7)? != 0,
+                created_at: row.get(8)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn set_candidate_favorite(
     db: State<'_, Database>,

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { isTauri } from "@/services/tauri/invoke";
+import { getVersions } from "@/services/tauri/versions";
 import { Canvas } from "./Canvas";
 import { PromptPanel } from "./PromptPanel";
 import { MaskPanel } from "./MaskPanel";
@@ -79,10 +80,26 @@ export function EditorScreen() {
 
   function handleSelectImage(imageId: string) {
     resetEditor();
-    useAppStore.getState().setCurrentVersions([]);
-    useAppStore.getState().setActiveVersion(null);
     useAppStore.getState().selectImage(imageId);
     setActiveTab("prompt");
+    if (isTauri()) {
+      getVersions(imageId)
+        .then((versions) => {
+          useAppStore.getState().setCurrentVersions(versions);
+          const current = versions.find((v) => v.isCurrent);
+          useAppStore
+            .getState()
+            .setActiveVersion(current?.id ?? versions[0]?.id ?? null);
+        })
+        .catch((err) => {
+          console.error("Failed to load versions:", err);
+          useAppStore.getState().setCurrentVersions([]);
+          useAppStore.getState().setActiveVersion(null);
+        });
+    } else {
+      useAppStore.getState().setCurrentVersions([]);
+      useAppStore.getState().setActiveVersion(null);
+    }
   }
 
   // Label for what's currently displayed

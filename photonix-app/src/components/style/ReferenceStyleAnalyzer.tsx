@@ -55,10 +55,11 @@ export function ReferenceStyleAnalyzer({
     }
     setAnalyzing(true);
     try {
+      const visionModelId = provider.visionModel?.trim() || provider.textModel;
       const result = await analyzeReferenceStyle(
         imagePath,
         provider.baseUrl,
-        provider.textModel
+        visionModelId
       );
       setAnalysis(result);
       setDraft(result.draftProfile);
@@ -115,6 +116,18 @@ export function ReferenceStyleAnalyzer({
         instructs the model to describe only color, light, and tone — never
         people, places, or copyrighted content. The original file is not
         uploaded.
+      </p>
+
+      {/* Vision model indicator */}
+      <div className="flex items-center justify-between rounded bg-neutral-800/50 px-2 py-1">
+        <span className="text-[10px] text-neutral-500">Vision model</span>
+        <span className="text-[10px] text-neutral-300" title="Override in Settings → Provider & Models → Vision Model">
+          {provider.visionModel?.trim() || `${provider.textModel} (fallback)`}
+        </span>
+      </div>
+      <p className="text-[9px] text-neutral-600">
+        If analysis fails with "model does not support image input", set a
+        vision-capable model in Settings → Provider &amp; Models.
       </p>
 
       <button

@@ -3,8 +3,11 @@ import { useAppStore } from "@/stores/appStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useBatchStore } from "@/stores/batchStore";
 import { importFolder, getAllImages, generateThumbnail } from "@/services/tauri/images";
+import { getVersions } from "@/services/tauri/versions";
 import { isTauri } from "@/services/tauri/invoke";
 import { BatchDialog } from "./BatchDialog";
+import { BatchExportDialog } from "./BatchExportDialog";
+import { useBatchExportStore } from "@/stores/batchExportStore";
 import type { ImageAsset } from "@/types";
 
 const THUMBNAIL_BATCH_SIZE = 50;
@@ -23,6 +26,7 @@ export function LibraryScreen() {
   const toggleSelect = useBatchStore((s) => s.toggleSelect);
   const clearSelection = useBatchStore((s) => s.clearSelection);
   const setBatchDialogOpen = useBatchStore((s) => s.setDialogOpen);
+  const setBatchExportDialogOpen = useBatchExportStore((s) => s.setDialogOpen);
 
   const [importError, setImportError] = useState<string | null>(null);
   const [thumbCache, setThumbCache] = useState<Record<string, string>>({});
@@ -124,9 +128,27 @@ export function LibraryScreen() {
       return;
     }
     resetEditor();
-    useAppStore.getState().setCurrentVersions([]);
-    useAppStore.getState().setActiveVersion(null);
     selectImage(imageId);
+    // Load versions immediately so the editor (and candidate strip) can
+    // resolve version_id → storage path on first render after reopening.
+    if (isTauri()) {
+      getVersions(imageId)
+        .then((versions) => {
+          useAppStore.getState().setCurrentVersions(versions);
+          const current = versions.find((v) => v.isCurrent);
+          useAppStore
+            .getState()
+            .setActiveVersion(current?.id ?? versions[0]?.id ?? null);
+        })
+        .catch((err) => {
+          console.error("Failed to load versions:", err);
+          useAppStore.getState().setCurrentVersions([]);
+          useAppStore.getState().setActiveVersion(null);
+        });
+    } else {
+      useAppStore.getState().setCurrentVersions([]);
+      useAppStore.getState().setActiveVersion(null);
+    }
     setView("editor");
   }
 
@@ -146,6 +168,10 @@ export function LibraryScreen() {
   function openBatchDialog() {
     if (selectedIds.size === 0) return;
     setBatchDialogOpen(true);
+  }
+
+  function openBatchExportDialog() {
+    setBatchExportDialogOpen(true);
   }
 
   return (
@@ -195,7 +221,23 @@ export function LibraryScreen() {
             >
               Batch Edit ({selectedIds.size})
             </button>
+            <button
+              onClick={openBatchExportDialog}
+              className="rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-500 transition-colors"
+              title="Export selected images, or all favorited candidates"
+            >
+              Batch Export
+            </button>
           </>
+        )}
+        {!selectMode && (
+          <button
+            onClick={openBatchExportDialog}
+            className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400 hover:bg-neutral-700 transition-colors"
+            title="Export current versions or all favorited candidates"
+          >
+            Batch Export
+          </button>
         )}
         <div className="flex-1" />
         {importError && <span className="text-xs text-red-400">{importError}</span>}
@@ -230,6 +272,7 @@ export function LibraryScreen() {
       </div>
 
       <BatchDialog />
+      <BatchExportDialog />
     </div>
   );
 }

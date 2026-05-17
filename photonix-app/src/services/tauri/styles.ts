@@ -1,10 +1,13 @@
 import { invoke, isTauri } from "./invoke";
+import { loadSetting, saveSetting } from "./settings";
 import type {
   ColorMood,
   StyleCategory,
   StyleProfile,
   StyleSource,
 } from "@/types";
+
+const DEFAULT_STYLE_KEY = "default_style_id";
 
 interface RawStyleProfileRow {
   id: string;
@@ -92,5 +95,35 @@ export async function deleteStyleProfile(id: string): Promise<void> {
 
 export async function setDefaultStyleProfile(id: string): Promise<void> {
   if (!isTauri()) return;
-  await invoke("set_default_style_profile", { id });
+  // For DB-backed user styles this also flips is_default in style_profiles.
+  // For built-in style ids (which never enter the table) the call is a
+  // harmless no-op. The persistent source of truth for the default is the
+  // app_settings row written below — that way restarting Photonix correctly
+  // restores the default even when it points at a built-in profile.
+  try {
+    await invoke("set_default_style_profile", { id });
+  } catch (err) {
+    console.warn("set_default_style_profile failed (likely a built-in id):", err);
+  }
+  await saveSetting(DEFAULT_STYLE_KEY, id);
+}
+
+/** Read the persisted default style id (works for built-in and user styles). */
+export async function loadDefaultStyleId(): Promise<string | null> {
+  if (!isTauri()) return null;
+  return (await loadSetting<string>(DEFAULT_STYLE_KEY)) ?? null;
+}
+
+/** Clear the default style. Resets both app_settings and is_default flags. */
+export async function clearDefaultStyleProfile(): Promise<void> {
+  if (!isTauri()) return;
+  await saveSetting(DEFAULT_STYLE_KEY, null);
+  // Also unset is_default flags on user-saved styles.
+  // No dedicated command for "clear all defaults" — calling
+  // set_default_style_profile with a non-existent id is the cheapest way.
+  try {
+    await invoke("set_default_style_profile", { id: "__none__" });
+  } catch {
+    // ignore
+  }
 }

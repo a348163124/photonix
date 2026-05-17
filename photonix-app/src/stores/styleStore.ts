@@ -90,9 +90,14 @@ interface StyleState {
   updateStyle: (id: string, patch: Partial<StyleProfile>) => void;
   removeStyle: (id: string) => void;
 
-  /** Currently selected style for the next edit/candidate run. */
-  selectedStyleId: string | null;
-  setSelectedStyleId: (id: string | null) => void;
+  /**
+   * Explicit per-edit selection.
+   *  - undefined → no override; fall back to default style
+   *  - null      → user explicitly cleared (do not use any style)
+   *  - string    → user explicitly picked this style id
+   */
+  selectedStyleId: string | null | undefined;
+  setSelectedStyleId: (id: string | null | undefined) => void;
 
   defaultStyleId: string | null;
   setDefaultStyleId: (id: string | null) => void;
@@ -118,7 +123,7 @@ export const useStyleStore = create<StyleState>((set, get) => ({
   removeStyle: (id) =>
     set((state) => ({ styles: state.styles.filter((s) => s.id !== id) })),
 
-  selectedStyleId: null,
+  selectedStyleId: undefined,
   setSelectedStyleId: (id) => set({ selectedStyleId: id }),
 
   defaultStyleId: null,
@@ -126,6 +131,9 @@ export const useStyleStore = create<StyleState>((set, get) => ({
 
   selectedStyle: () => {
     const { styles, selectedStyleId, defaultStyleId } = get();
+    // Explicitly cleared by the user → no style at all.
+    if (selectedStyleId === null) return null;
+    // No override → fall back to the default style.
     const id = selectedStyleId ?? defaultStyleId;
     if (!id) return null;
     return styles.find((s) => s.id === id) ?? null;

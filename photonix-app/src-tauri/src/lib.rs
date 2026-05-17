@@ -56,6 +56,7 @@ pub fn run() {
             commands::reference_style::analyze_reference_style,
             commands::candidates::record_candidate,
             commands::candidates::list_candidates_for_image,
+            commands::candidates::list_favorite_candidates,
             commands::candidates::set_candidate_favorite,
             commands::candidates::delete_candidate,
         ])

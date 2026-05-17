@@ -26,6 +26,7 @@ const defaultProvider: ProviderConfig = {
   imageModel: "gpt-image-2",
   textModel: "gpt-5.4-mini",
   fallbackTextModel: "gpt-5.4",
+  visionModel: "gpt-5.4o",
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({

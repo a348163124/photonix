@@ -15,6 +15,7 @@ interface StoredProviderConfig {
   imageModel: string;
   textModel: string;
   fallbackTextModel: string;
+  visionModel: string;
 }
 
 interface StoredEditingPrefs {
@@ -62,6 +63,7 @@ export function SettingsScreen() {
       imageModel: provider.imageModel,
       textModel: provider.textModel,
       fallbackTextModel: provider.fallbackTextModel,
+      visionModel: provider.visionModel,
     };
     await saveSetting("provider_config", config);
   }
@@ -279,6 +281,20 @@ function ProviderSection({
         value={provider.fallbackTextModel}
         onChange={(v) => setProvider({ fallbackTextModel: v })}
       />
+      <div>
+        <Field
+          label="Vision Model (Reference Style Analysis)"
+          value={provider.visionModel}
+          onChange={(v) => setProvider({ visionModel: v })}
+          placeholder="gpt-4o or another vision-capable chat model"
+        />
+        <p className="mt-1 text-[10px] text-neutral-600">
+          Used only when analyzing a reference style image. Leave blank to fall
+          back to the Text Model. Many providers expose vision under a separate
+          model id, so set this explicitly if reference analysis fails with a
+          "model does not support image input" error.
+        </p>
+      </div>
 
       <div className="flex items-center gap-2 pt-2">
         <button

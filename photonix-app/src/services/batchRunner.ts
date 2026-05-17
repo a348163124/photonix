@@ -61,7 +61,7 @@ async function runOneItem(
     const preserveIdentity = style?.preserveIdentity ?? false;
     const preserveComposition = style?.preserveComposition ?? true;
 
-    await runEditPipeline(
+    const result = await runEditPipeline(
       {
         imageId: item.imageId,
         sourcePath: item.imageSourcePath,
@@ -78,18 +78,21 @@ async function runOneItem(
       provider
     );
 
-    // Persist into prompt history
+    // Persist into prompt history (now with the generated version id)
     void recordPromptHistory({
       id: crypto.randomUUID(),
       rawPrompt: item.prompt,
       presetId: item.presetId,
       qualityMode: item.qualityMode,
       imageId: item.imageId,
-      versionId: null,
+      versionId: result.editResult.versionId ?? null,
       createdAt: new Date().toISOString(),
     }).catch(() => {});
 
-    update(item.id, { status: "succeeded" });
+    update(item.id, {
+      status: "succeeded",
+      resultVersionId: result.editResult.versionId,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     update(item.id, { status: "failed", error: msg });

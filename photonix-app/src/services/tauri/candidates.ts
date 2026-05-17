@@ -56,6 +56,12 @@ export async function listCandidatesForImage(
   return rows.map(rowToCandidate);
 }
 
+export async function listFavoriteCandidates(): Promise<EditCandidate[]> {
+  if (!isTauri()) return [];
+  const rows = await invoke<RawEditCandidateRow[]>("list_favorite_candidates");
+  return rows.map(rowToCandidate);
+}
+
 export async function setCandidateFavorite(
   id: string,
   isFavorite: boolean

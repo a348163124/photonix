@@ -80,6 +80,14 @@ export interface ProviderConfig {
   imageModel: string;
   textModel: string;
   fallbackTextModel: string;
+  /**
+   * Vision-capable text model used for reference style analysis (MVP3 §33.8).
+   * Falls back to `textModel` when empty. Many providers expose vision under
+   * a different model id than the default chat model, so we let users
+   * override it explicitly to avoid runtime "model does not support image
+   * input" errors.
+   */
+  visionModel: string;
 }
 
 // ─── Prompt Compiler Types ───────────────────────────────────────────────────
@@ -456,3 +464,7 @@ export type FilenameTemplate = string;
 
 export const DEFAULT_FILENAME_TEMPLATE: FilenameTemplate =
   "{original_name}_{preset}.{ext}";
+
+// ─── MVP3: Batch Export ──────────────────────────────────────────────────────
+
+export type OverwritePolicy = "skip" | "overwrite" | "rename";

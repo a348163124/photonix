@@ -1,6 +1,6 @@
 import { isTauri, invoke } from "@/services/tauri/invoke";
 import { loadSetting } from "@/services/tauri/settings";
-import { listStyleProfiles } from "@/services/tauri/styles";
+import { listStyleProfiles, loadDefaultStyleId } from "@/services/tauri/styles";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { BUILT_IN_STYLES, useStyleStore } from "@/stores/styleStore";
 import type { ExportPresetId, UploadProxyProfile } from "@/types";
@@ -11,6 +11,7 @@ export interface StoredProviderConfig {
   imageModel: string;
   textModel: string;
   fallbackTextModel: string;
+  visionModel?: string; // optional: existing installs won't have this set
 }
 
 export interface StoredEditingPrefs {
@@ -42,6 +43,9 @@ export async function bootstrapSettings(): Promise<void> {
         imageModel: config.imageModel,
         textModel: config.textModel,
         fallbackTextModel: config.fallbackTextModel,
+        // Existing installs may not have a visionModel — keep the default in
+        // that case rather than blanking it out.
+        ...(config.visionModel ? { visionModel: config.visionModel } : {}),
       });
     }
   } catch (err) {
@@ -82,9 +86,14 @@ export async function bootstrapSettings(): Promise<void> {
       ...BUILT_IN_STYLES.filter((s) => !userIds.has(s.id)),
     ];
     styleStore.setStyles(merged);
-    const defaultStyle = userStyles.find((s) => s.isDefault);
-    if (defaultStyle) {
-      styleStore.setDefaultStyleId(defaultStyle.id);
+
+    // Default style: prefer the explicit app_settings entry (works for
+    // built-ins too), fall back to the is_default flag in the table.
+    const persistedDefaultId = await loadDefaultStyleId();
+    const tableDefault = userStyles.find((s) => s.isDefault);
+    const resolvedDefault = persistedDefaultId ?? tableDefault?.id ?? null;
+    if (resolvedDefault && merged.some((s) => s.id === resolvedDefault)) {
+      styleStore.setDefaultStyleId(resolvedDefault);
     }
   } catch (err) {
     console.warn("Failed to load style profiles:", err);
