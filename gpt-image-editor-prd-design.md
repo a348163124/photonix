@@ -1,8 +1,8 @@
 # GPT-Image-2 Windows Photo Editor
 
-Version: v0.2
+Version: v0.3
 Date: 2026-05-17
-Status: Draft, updated with MVP2 Social Landscape Edition
+Status: Draft, updated with MVP2 and MVP3 planning
 
 ## 1. Document Purpose
 
@@ -170,9 +170,35 @@ See [§32](#32-mvp2-social-landscape-edition) for detailed requirements.
 
 ### 6.3 Post-MVP Features
 
+### 6.3 MVP3 Personal Style Workflow
+
+MVP3 focuses on personal creative workflow and repeatable output style.
+
+MVP3 features:
+
+- My Style: save the user's preferred landscape and portrait editing taste as reusable style profiles
+- multi-version candidates: generate multiple visual directions from one source photo and prompt
+- batch edit and batch export improvements
+- watermark and border templates for social sharing
+- reference style image analysis using text/vision analysis rather than direct multi-image editing
+
+Reference style images in MVP3 use analysis mode:
+
+- user imports or selects a favorite reference photo
+- a vision-capable text model analyzes its color mood, contrast, saturation, temperature, highlight/shadow behavior, and photographic style
+- local color statistics can supplement the analysis
+- the result is saved as a style profile or style prompt fragment
+- future edits apply that style description to the current photo
+
+MVP3 does not require sending both the source photo and reference photo into the image edit request. Direct reference-image editing remains a future enhancement.
+
+See [§33](#33-mvp3-personal-style-workflow) for detailed requirements.
+
+### 6.4 Post-MVP Features
+
 - region auto-detection
 - smart prompt suggestions
-- reference-image-based edits
+- direct reference-image-based edits
 - project folders and tags
 - original-resolution crop-stitch local repair
 - RAW workflow support
@@ -1010,10 +1036,14 @@ src-tauri/
 
 ### 27.1 Product Expansion
 
+- My Style profiles
+- multi-version edit candidates
+- reference style image analysis
+- watermark and border templates
 - larger batch queue with scheduling and retry policies
 - original-resolution crop-stitch local repair
 - region auto-detection for local repairs
-- reference image mode
+- direct reference image edit mode
 - smart auto-mask suggestions
 - project folders, tags, and search
 
@@ -1645,13 +1675,13 @@ interface SubmitEditRequest {
   quality_mode: "draft" | "final";
   upload_proxy_profile?: "fast" | "recommended" | "high_quality";
   base_url: string;
-  api_key: string;
   image_model: string;
 }
 ```
 
 The Rust command should:
 
+- load the API key from platform secure storage
 - read the original source path
 - generate an upload proxy according to profile
 - resize mask to match upload proxy when present
@@ -1773,3 +1803,773 @@ The following remain future work:
 - commercial portrait retouching
 - macOS signed and notarized release
 - hosted relay service
+
+## 33. MVP3 Personal Style Workflow
+
+### 33.1 Purpose
+
+MVP3 turns Photonix from a capable social photo editor into a personal creative assistant. The goal is to help the user produce a consistent recognizable style across landscape sets, travel albums, occasional portraits, and social sharing exports.
+
+MVP3 focuses on:
+
+- My Style
+- multi-version candidates
+- batch edit and batch export
+- watermark and border templates
+- reference style image analysis
+
+This phase should still avoid becoming a full Photoshop or Lightroom replacement. It should remain prompt-first, fast, and social-output oriented.
+
+### 33.2 Product Goal
+
+A user should be able to:
+
+1. define their preferred editing taste once
+2. optionally analyze a favorite reference photo into a reusable style profile
+3. generate several candidate edits from one source photo
+4. apply the same style to a selected batch
+5. export a polished social-ready set with consistent borders or watermarks
+
+The product should feel less like "write a prompt every time" and more like "apply my photographic taste to this photo set."
+
+### 33.3 Non-Goals
+
+MVP3 does not include:
+
+- commercial RAW development
+- complex layer compositing
+- original-resolution crop-stitch as the default workflow
+- direct multi-image reference editing through the image edit endpoint
+- fully automated album curation
+- cloud sync of personal styles
+- paid marketplace for styles or presets
+
+### 33.4 Feature 1: My Style
+
+#### 33.4.1 User Value
+
+My Style lets users save their preferred photographic taste as reusable profiles. This reduces repeated prompting and keeps photo sets visually consistent.
+
+Example style profiles:
+
+- Clean Landscape: natural clarity, low HDR, balanced sky, realistic greens
+- Cool Travel: blue shadows, soft highlights, calm low-saturation mood
+- Warm Sunset: golden highlights, preserved cloud detail, natural shadows
+- Soft Portrait: natural skin, gentle contrast, identity-safe retouching
+
+#### 33.4.2 Functional Requirements
+
+Users can:
+
+- create a style profile from scratch
+- create a style profile from a reference image analysis
+- edit style name and description
+- set a default style profile
+- apply a style profile during single-image edit
+- apply a style profile during batch edit
+- duplicate or delete custom style profiles
+
+Each style profile stores:
+
+- style name
+- category: landscape, portrait, travel, custom
+- style summary
+- positive style instructions
+- negative style constraints
+- color mood
+- contrast preference
+- saturation preference
+- detail and sharpness preference
+- identity/composition preservation defaults
+
+#### 33.4.3 Suggested Style Profile Schema
+
+```ts
+type StyleCategory = "landscape" | "portrait" | "travel" | "custom";
+
+interface StyleProfile {
+  id: string;
+  name: string;
+  category: StyleCategory;
+  description: string;
+  source: "manual" | "reference_analysis" | "preset";
+  referenceImagePath?: string;
+  styleSummary: string;
+  positivePrompt: string;
+  negativePrompt: string;
+  colorMood: {
+    temperature: "cool" | "neutral" | "warm";
+    saturation: "low" | "natural" | "rich";
+    contrast: "soft" | "balanced" | "strong";
+    shadowTint?: string;
+    highlightTint?: string;
+  };
+  preserveIdentity: boolean;
+  preserveComposition: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+#### 33.4.4 Prompt Compiler Integration
+
+When a style profile is selected, the prompt compiler should receive:
+
+- raw user prompt
+- selected preset if any
+- selected style profile
+- image type
+- mask presence
+- preservation flags
+
+The compiled edit prompt should merge the user's direct instruction with the style profile. User instruction wins over style defaults when they conflict.
+
+Example:
+
+```text
+User prompt:
+Make this mountain lake photo cleaner and more atmospheric.
+
+Selected style:
+Clean Landscape.
+
+Compiled direction:
+Enhance natural clarity and atmosphere while preserving the original landscape
+composition. Use balanced contrast, realistic greens, preserved sky detail,
+and avoid HDR halos, neon saturation, or artificial cloud drama.
+```
+
+### 33.5 Feature 2: Multi-Version Candidates
+
+#### 33.5.1 User Value
+
+Landscape editing is subjective. Multi-version candidates let users compare several tasteful interpretations without rewriting prompts repeatedly.
+
+#### 33.5.2 Functional Requirements
+
+Users can generate:
+
+- 2 candidates
+- 3 candidates
+- 4 candidates
+
+Candidate modes:
+
+- Natural
+- Cinematic
+- Clean and Bright
+- Moody
+- Warm
+- Cool
+- Style Profile Variants
+
+The UI should show:
+
+- candidate grid
+- source image
+- prompt and style used
+- candidate labels
+- quick actions: select, favorite, delete, export, make current version
+
+#### 33.5.3 Technical Approach
+
+MVP3 should implement multi-version candidates as multiple normal edit jobs:
+
+```text
+source image + prompt + candidate variant A -> edit job A
+source image + prompt + candidate variant B -> edit job B
+source image + prompt + candidate variant C -> edit job C
+```
+
+Recommended default concurrency: `1`.
+
+Reason:
+
+- image editing requests are expensive
+- sequential processing avoids provider rate-limit surprises
+- UI progress is easier to explain
+
+#### 33.5.4 Candidate Prompt Generation
+
+Use the text model to produce variant prompt fragments.
+
+Input:
+
+- user prompt
+- selected style profile
+- image type
+- desired candidate count
+
+Output:
+
+```ts
+interface CandidatePlan {
+  id: string;
+  label: string;
+  promptModifier: string;
+  negativeModifier: string;
+}
+```
+
+Example candidates for a lake landscape:
+
+- Natural Clarity: subtle detail and realistic color
+- Cool Morning: cooler shadows and calm blue mood
+- Warm Sunset: warmer highlights and golden atmosphere
+
+### 33.6 Feature 3: Batch Edit and Batch Export
+
+#### 33.6.1 User Value
+
+Users often want to process a travel or landscape set with a consistent look. MVP2 starts batch editing; MVP3 should make it practical for repeated use.
+
+#### 33.6.2 Batch Edit Requirements
+
+Improve batch edit with:
+
+- saved batch queue state
+- batch-level style profile
+- batch-level preset
+- per-image status
+- retry failed items
+- skip completed items
+- cancel pending items
+- simple queue summary
+
+Batch metadata should record:
+
+- prompt
+- style profile id
+- preset id
+- upload proxy profile
+- quality mode
+- started time
+- finished time
+
+#### 33.6.3 Batch Export Requirements
+
+Users can select:
+
+- all current versions in selected images
+- all favorited candidates
+- all successful batch outputs
+
+Batch export supports:
+
+- export preset
+- output folder
+- filename template
+- watermark template
+- border template
+- overwrite policy
+
+Example filename templates:
+
+```text
+{original_name}_{style}_{index}.jpg
+{date}_{original_name}_wechat.jpg
+{original_name}_v{version}.jpg
+```
+
+### 33.7 Feature 4: Watermark and Border Templates
+
+#### 33.7.1 User Value
+
+For social sharing, a clean border or subtle signature can make a photo set feel intentional without needing another design tool.
+
+#### 33.7.2 Border Templates
+
+MVP3 should include:
+
+- no border
+- thin white border
+- thin black border
+- gallery mat border
+- cinematic letterbox
+- square social frame
+
+Border settings:
+
+- color
+- thickness
+- aspect ratio output mode
+- inner padding
+- optional shadow
+
+#### 33.7.3 Watermark Templates
+
+MVP3 should include:
+
+- text signature
+- date stamp
+- location text
+- camera metadata text if available
+- small corner mark
+
+Watermark settings:
+
+- text
+- font size
+- color
+- opacity
+- position
+- margin
+
+Do not add complex logo design tools in MVP3. A text-based watermark is enough.
+
+#### 33.7.4 Technical Approach
+
+Watermark and border should be implemented locally in Rust during export.
+
+Preferred implementation:
+
+- open selected version image
+- optionally resize by export preset
+- apply border/canvas expansion
+- render text watermark
+- encode JPEG or PNG
+
+This should not call an AI model.
+
+### 33.8 Feature 5: Reference Style Image Analysis
+
+#### 33.8.1 Product Decision
+
+MVP3 uses analysis mode, not direct reference-image editing.
+
+Analysis mode means:
+
+```text
+reference image -> vision/text model analysis -> style profile -> future edits
+```
+
+It does not mean:
+
+```text
+source image + reference image -> image edit model directly
+```
+
+Rationale:
+
+- more controllable
+- lower risk of copying content from the reference image
+- easier to cache and reuse
+- fits the current prompt compiler architecture
+- avoids complex multi-image edit API compatibility issues in MVP3
+
+#### 33.8.2 What To Extract
+
+The reference analysis should extract:
+
+- overall color mood
+- temperature
+- saturation
+- contrast
+- shadow tint
+- highlight tint
+- dominant color palette
+- sky treatment
+- green treatment
+- skin treatment if portrait
+- grain or texture preference
+- sharpness/detail preference
+- what to avoid
+
+#### 33.8.3 Local Color Analysis
+
+Before or alongside AI analysis, the app can compute local image statistics:
+
+- dominant palette with K-means or median cut
+- average color in Lab/HSL
+- saturation histogram
+- brightness histogram
+- contrast estimate
+- warm/cool balance
+- highlight and shadow color bias
+
+Local analysis is useful because it is:
+
+- cheap
+- private
+- deterministic
+- available even when AI analysis fails
+
+#### 33.8.4 AI Style Analysis
+
+Use a vision-capable text model to analyze the reference image and produce structured JSON.
+
+Input:
+
+- resized reference image
+- instruction: analyze only color, tone, and photographic style
+- prohibition: do not identify people, brands, private locations, or copyrighted content
+
+Expected output:
+
+```ts
+interface ReferenceStyleAnalysis {
+  summary: string;
+  colorMood: string;
+  temperature: "cool" | "neutral" | "warm";
+  saturation: "low" | "natural" | "rich";
+  contrast: "soft" | "balanced" | "strong";
+  shadowBehavior: string;
+  highlightBehavior: string;
+  dominantPalette: string[];
+  landscapeGuidance: string[];
+  portraitGuidance: string[];
+  negativeConstraints: string[];
+  reusablePromptFragment: string;
+}
+```
+
+Example reusable prompt fragment:
+
+```text
+Apply a cool, calm landscape tone inspired by the reference: soft blue-green
+shadows, gentle warm highlights, natural low saturation, clean sky gradients,
+realistic foliage greens, balanced contrast, and no HDR halos or neon colors.
+```
+
+#### 33.8.5 Reference Style Workflow
+
+1. user opens Style screen
+2. user clicks Analyze Reference Image
+3. user selects a favorite photo
+4. app creates a small analysis proxy
+5. app runs local color analysis
+6. app sends the proxy to the vision-capable text model for style analysis
+7. app shows the extracted style summary and palette
+8. user edits the name and optional constraints
+9. user saves it as a My Style profile
+10. user applies it in single edit, multi-candidate edit, or batch edit
+
+#### 33.8.6 Privacy Rules
+
+Reference image analysis should:
+
+- send only a resized proxy, not the original large image
+- state clearly that the image is sent to the configured provider
+- store the analysis result locally
+- allow deleting the reference image path and keeping only the style text
+- avoid generating prompts that copy content, composition, people, or objects
+
+### 33.9 UI Requirements
+
+#### 33.9.1 New Style Screen
+
+Add a top-level Style screen or a Style section in Settings.
+
+Recommended layout:
+
+```text
++---------------------------------------------------------------+
+| Style Library                                                  |
++------------------------+--------------------------------------+
+| My Styles              | Style Detail                         |
+| - Clean Landscape      | Name                                 |
+| - Cool Travel          | Summary                              |
+| - Warm Sunset          | Palette                              |
+| - Soft Portrait        | Positive style prompt                |
+|                        | Negative constraints                 |
+| + Analyze Reference    | Apply defaults                       |
++------------------------+--------------------------------------+
+```
+
+#### 33.9.2 Editor Prompt Panel Changes
+
+Add:
+
+- style profile selector
+- candidate count selector
+- generate candidates action
+- current style summary
+- option to save current prompt + style as a profile
+
+#### 33.9.3 Candidate Review UI
+
+Add a candidate strip or grid:
+
+- thumbnail
+- candidate label
+- created time
+- favorite button
+- make current button
+- export button
+
+#### 33.9.4 Batch Dialog Changes
+
+Add:
+
+- style profile selector
+- export after completion toggle
+- watermark/border template selector
+- output folder picker for batch export
+
+#### 33.9.5 Export Panel Changes
+
+Add:
+
+- border template selector
+- watermark template selector
+- preview thumbnail if feasible
+- apply to batch action when multiple images are selected
+
+### 33.10 Technical Design
+
+#### 33.10.1 Suggested New Frontend Modules
+
+```text
+src/
+  components/
+    style/
+      StyleScreen.tsx
+      StyleList.tsx
+      StyleDetail.tsx
+      ReferenceStyleAnalyzer.tsx
+    candidates/
+      CandidateGrid.tsx
+      CandidateCard.tsx
+    export/
+      WatermarkPanel.tsx
+      BorderPanel.tsx
+  stores/
+    styleStore.ts
+    candidateStore.ts
+  services/
+    style/
+      referenceStyleAnalyzer.ts
+      localColorAnalysis.ts
+    candidates/
+      candidatePlanner.ts
+```
+
+#### 33.10.2 Suggested Rust Modules
+
+```text
+src-tauri/src/
+  commands/
+    styles.rs
+    export_templates.rs
+  image_core/
+    color_analysis.rs
+    watermark.rs
+    border.rs
+```
+
+#### 33.10.3 Suggested SQLite Tables
+
+```sql
+CREATE TABLE style_profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    source TEXT NOT NULL,
+    reference_image_path TEXT,
+    description TEXT,
+    style_summary TEXT NOT NULL,
+    positive_prompt TEXT NOT NULL,
+    negative_prompt TEXT,
+    color_mood_json TEXT,
+    preserve_identity INTEGER NOT NULL DEFAULT 0,
+    preserve_composition INTEGER NOT NULL DEFAULT 1,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE edit_candidates (
+    id TEXT PRIMARY KEY,
+    image_id TEXT NOT NULL,
+    version_id TEXT,
+    candidate_group_id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    prompt_modifier TEXT,
+    style_profile_id TEXT,
+    is_favorite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
+    FOREIGN KEY (version_id) REFERENCES image_versions(id) ON DELETE SET NULL
+);
+
+CREATE TABLE export_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    template_type TEXT NOT NULL,
+    config_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+```
+
+#### 33.10.4 Reference Analysis Command
+
+Rust command:
+
+```rust
+pub struct AnalyzeReferenceStyleRequest {
+    pub image_path: String,
+    pub base_url: String,
+    pub text_model: String,
+}
+
+pub struct AnalyzeReferenceStyleResult {
+    pub local_palette_json: String,
+    pub ai_analysis_json: String,
+    pub style_profile: StyleProfileRow,
+}
+```
+
+Behavior:
+
+- load image from disk
+- create analysis proxy
+- compute local palette and tone statistics
+- send proxy image to the configured vision-capable text model
+- parse structured JSON
+- create or return a draft style profile
+
+The API key should be loaded in Rust from secure storage, never passed from JS.
+
+#### 33.10.5 Candidate Generation Command
+
+MVP3 can implement this in frontend orchestration first:
+
+- call text model to generate candidate plan
+- enqueue normal edit jobs
+- save each result as a version
+- save candidate metadata
+
+If the queue becomes complex, move orchestration into Rust later.
+
+### 33.11 MVP3 Milestones
+
+#### Milestone 1: Style Profiles
+
+- add style profile data model
+- add built-in style profiles
+- add style selector in editor
+- merge style profile into prompt compiler
+- support default style profile
+
+#### Milestone 2: Reference Style Analysis
+
+- add reference image picker
+- implement local color analysis
+- implement AI style analysis through vision-capable text model
+- preview extracted palette and style summary
+- save analysis as My Style profile
+
+#### Milestone 3: Multi-Version Candidates
+
+- add candidate planner
+- generate 2 to 4 candidate prompt variants
+- run candidates as normal edit jobs
+- show candidate grid
+- allow favorite and make-current actions
+
+#### Milestone 4: Batch Edit and Batch Export Upgrade
+
+- add style profile to batch edit
+- persist batch metadata
+- add batch export for successful or favorited outputs
+- add filename templates
+- add retry/skip/completed behavior
+
+#### Milestone 5: Watermark and Border Templates
+
+- add built-in border templates
+- add text watermark templates
+- implement local Rust export rendering
+- wire templates into single export and batch export
+
+#### Milestone 6: MVP3 Polish
+
+- improve copy around provider privacy for reference analysis
+- add safety constraints to avoid copying reference content
+- tune default styles with real landscape photos
+- run manual QA on travel/photo-set workflows
+
+### 33.12 Acceptance Criteria
+
+MVP3 is done when:
+
+- user can create, edit, delete, and set a default My Style profile
+- user can analyze a reference style image into a reusable style profile
+- reference analysis extracts both local palette data and AI style guidance
+- user can apply a style profile in single-image editing
+- user can generate at least 3 candidates for one image
+- user can favorite a candidate and make it the current version
+- user can batch edit selected images with a selected style profile
+- user can batch export successful or favorited results
+- user can apply at least 3 border templates
+- user can apply a text watermark during export
+- reference images are uploaded only as resized analysis proxies
+- all reference analysis outputs are stored locally and deletable
+
+### 33.13 Deferred From MVP3
+
+The following remain future work:
+
+- direct source-image plus reference-image editing in one image edit request
+- automatic semantic scene classification for style recommendations
+- cloud style sync
+- commercial preset marketplace
+- RAW color pipeline
+- advanced metadata watermarking
+- full album layout and story sequencing
+
+### 33.14 Implementation Status (2026-05-17)
+
+MVP3 has been implemented and shipped end-to-end. Frontend and Rust both
+compile cleanly (`tsc --noEmit` and `cargo check`).
+
+Delivered against §33.11 milestones:
+
+- **M1 Style Profiles**: `style_profiles` SQLite table (migration 004),
+  `commands::styles::*` (upsert/list/delete/set_default), `styleStore` with
+  4 built-in profiles (Clean Landscape, Cool Travel, Warm Sunset, Soft
+  Portrait), Style screen with list/detail editor, style selector wired into
+  `PromptPanel`, `BatchDialog`, and the prompt-building stage of the edit
+  pipeline.
+- **M2 Reference Style Analysis**: `image_core::color_analysis` (palette
+  extraction, HSL averages, warm/cool balance, contrast estimate),
+  `commands::reference_style::analyze_reference_style` (768px JPEG proxy,
+  vision-capable chat call with strict-JSON system prompt and local stats
+  for grounding, draft profile builder), `ReferenceStyleAnalyzer` UI with
+  privacy notice, palette preview, and editable draft.
+- **M3 Multi-Version Candidates**: `edit_candidates` table, candidate
+  planner with hard-coded variant fragments per mode (natural / cinematic
+  / clean_bright / moody / warm / cool), sequential `candidateRunner`
+  reusing the existing edit pipeline, persisted candidates with favorite
+  and delete actions, `CandidateStrip` rendered below the editor canvas
+  with running-state placeholders.
+- **M4 Batch Edit & Export upgrade**: Batch dialog now accepts a style
+  profile that is merged into every job's prompt; batch runner respects
+  preserve_identity / preserve_composition from the chosen style; filename
+  template tokens (`{original_name}` `{style}` `{preset}` `{date}` `{time}`
+  `{index}` `{version_kind}` `{ext}`) are applied per export.
+- **M5 Watermark and Border Templates**: `image_core::border` (thickness,
+  color, inner_padding, letterbox, forced_aspect), `image_core::watermark`
+  (`ab_glyph` rasterization onto RGBA canvas using bundled DejaVu Sans),
+  `export_image` extended to accept optional `border` and `watermark`
+  configs applied before the long-edge resize, 6 built-in border templates
+  and a configurable text watermark in the Export panel.
+- **M6 Polish**: Reference analyzer privacy notice, vision system prompt
+  prohibits identifying people / brands / private locations, all reference
+  data persists locally and is deletable through the style detail page.
+
+Key non-goal reaffirmed: no direct multi-image reference editing through
+the image edit endpoint — analysis mode only, in line with §33.8.1.
+
+Notable deviations from §33.10 suggestions:
+
+- The candidate planner currently uses hard-coded variant fragments rather
+  than a text-model call (per the §33.10.5 "implement frontend orchestration
+  first" guidance). Upgrade path: swap `planCandidates()` for a
+  `candidate_plan` Rust command when AI-driven planning is needed.
+- Border / watermark export logic lives in a single `export_image` command
+  rather than a separate `export_templates.rs`, since the operations are
+  pure pixel transforms with no scheduling or persistence concerns. The
+  `export_templates` SQLite table is reserved for user-saved template
+  presets in a future iteration.

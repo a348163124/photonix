@@ -7,6 +7,7 @@ import { LibraryScreen } from "@/components/library/LibraryScreen";
 import { EditorScreen } from "@/components/editor/EditorScreen";
 import { SettingsScreen } from "@/components/settings/SettingsScreen";
 import { GenerateScreen } from "@/components/generate/GenerateScreen";
+import { StyleScreen } from "@/components/style/StyleScreen";
 
 export function AppShell() {
   const currentView = useAppStore((s) => s.currentView);
@@ -21,6 +22,7 @@ export function AppShell() {
             {currentView === "generate" && <GenerateScreen />}
             {currentView === "library" && <LibraryScreen />}
             {currentView === "editor" && <EditorScreen />}
+            {currentView === "style" && <StyleScreen />}
             {currentView === "settings" && <SettingsScreen />}
           </ErrorBoundary>
         </main>

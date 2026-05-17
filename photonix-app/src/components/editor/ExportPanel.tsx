@@ -1,10 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useStyleStore } from "@/stores/styleStore";
 import { isTauri } from "@/services/tauri/invoke";
 import { invoke } from "@/services/tauri/invoke";
 import { toast } from "@/components/ui/Toast";
-import { EXPORT_PRESETS, type ExportPresetId, type ExportPresetMeta } from "@/types";
+import { BorderPanel } from "@/components/export/BorderPanel";
+import { WatermarkPanel } from "@/components/export/WatermarkPanel";
+import { applyFilenameTemplate } from "@/services/export/filenameTemplate";
+import {
+  BORDER_TEMPLATES,
+  DEFAULT_FILENAME_TEMPLATE,
+  DEFAULT_WATERMARK,
+  EXPORT_PRESETS,
+  type BorderTemplateId,
+  type ExportPresetId,
+  type ExportPresetMeta,
+  type WatermarkTemplate,
+} from "@/types";
 
 export function ExportPanel() {
   const defaultPreset = useSettingsStore((s) => s.defaultExportPreset);
@@ -16,16 +29,26 @@ export function ExportPanel() {
   const [customQuality, setCustomQuality] = useState(90);
   const [customMaxEdge, setCustomMaxEdge] = useState<number | null>(null);
 
+  // MVP3: border + watermark + filename template
+  const [borderId, setBorderId] = useState<BorderTemplateId>("none");
+  const [watermark, setWatermark] = useState<WatermarkTemplate>(DEFAULT_WATERMARK);
+  const [filenameTemplate, setFilenameTemplate] = useState<string>(
+    DEFAULT_FILENAME_TEMPLATE
+  );
+
   const selectedImageId = useAppStore((s) => s.selectedImageId);
   const images = useAppStore((s) => s.images);
   const versions = useAppStore((s) => s.currentVersions);
   const activeVersionId = useAppStore((s) => s.activeVersionId);
   const selectedImage = images.find((img) => img.id === selectedImageId);
 
+  const selectedStyle = useStyleStore((s) => s.selectedStyle());
+
   const activeVersion = versions.find((v) => v.id === activeVersionId);
   const currentVersion = versions.find((v) => v.isCurrent);
   const exportSource =
     activeVersion?.storagePath ?? currentVersion?.storagePath ?? selectedImage?.sourcePath;
+  const sourceVersionKind = activeVersion?.versionKind ?? currentVersion?.versionKind ?? "original";
 
   const preset = EXPORT_PRESETS.find((p) => p.id === presetId)!;
   const isCustom = presetId === "custom";
@@ -45,6 +68,29 @@ export function ExportPanel() {
     return isCustom ? customMaxEdge : preset.longEdge;
   }
 
+  // Build the suggested filename based on the current template + context
+  const suggestedFilename = useMemo(() => {
+    if (!selectedImage) return "";
+    const fmt = effectiveFormat();
+    const baseName = selectedImage.filename.replace(/\.[^.]+$/, "");
+    return applyFilenameTemplate(filenameTemplate, {
+      originalName: baseName,
+      style: selectedStyle?.name ?? null,
+      preset: presetId,
+      versionKind: sourceVersionKind,
+      index: 1,
+      ext: fmt === "jpeg" ? "jpg" : fmt,
+    });
+  }, [
+    selectedImage,
+    filenameTemplate,
+    selectedStyle?.name,
+    presetId,
+    sourceVersionKind,
+    customFormat,
+    isCustom,
+  ]);
+
   async function handleExport() {
     if (!selectedImage || !exportSource) return;
 
@@ -60,12 +106,9 @@ export function ExportPanel() {
       const maxEdge = effectiveMaxEdge();
 
       const { save } = await import("@tauri-apps/plugin-dialog");
-      const baseName = selectedImage.filename.replace(/\.[^.]+$/, "");
-      const suffix = presetSuffix(presetId, isCustom ? customFormat : preset.format);
-      const defaultName = `${baseName}${suffix}.${fmt === "jpeg" ? "jpg" : fmt}`;
 
       const savePath = await save({
-        defaultPath: defaultName,
+        defaultPath: suggestedFilename,
         filters: [
           {
             name: fmt === "jpeg" ? "JPEG" : "PNG",
@@ -78,12 +121,40 @@ export function ExportPanel() {
         return;
       }
 
+      // Build optional border config
+      const borderMeta = BORDER_TEMPLATES.find((b) => b.id === borderId);
+      const borderConfig =
+        borderMeta && borderId !== "none"
+          ? {
+              thickness: borderMeta.thickness,
+              color: borderMeta.color,
+              inner_padding: borderMeta.innerPadding ?? null,
+              letterbox: borderMeta.letterbox ?? false,
+              forced_aspect: borderMeta.forcedAspect ?? null,
+            }
+          : null;
+
+      // Build optional watermark config
+      const watermarkConfig =
+        watermark.enabled && watermark.text.trim()
+          ? {
+              text: watermark.text,
+              position: watermark.position,
+              font_size: watermark.fontSize,
+              color: watermark.color,
+              opacity: watermark.opacity,
+              margin: watermark.margin,
+            }
+          : null;
+
       await invoke<string>("export_image", {
         sourcePath: exportSource,
         outputPath: savePath,
         format: fmt,
         quality,
         maxLongEdge: maxEdge,
+        border: borderConfig,
+        watermark: watermarkConfig,
       });
 
       toast(`Exported to: ${savePath}`, "success");
@@ -100,8 +171,6 @@ export function ExportPanel() {
       setExporting(false);
     }
   }
-
-  const visiblePresets = EXPORT_PRESETS;
 
   return (
     <div className="flex flex-col gap-3">
@@ -123,7 +192,7 @@ export function ExportPanel() {
       <div>
         <label className="mb-1 block text-[11px] text-neutral-400">Preset</label>
         <div className="flex flex-col gap-1">
-          {visiblePresets.map((p) => (
+          {EXPORT_PRESETS.map((p) => (
             <PresetButton
               key={p.id}
               preset={p}
@@ -138,9 +207,7 @@ export function ExportPanel() {
       {isCustom && (
         <div className="border-t border-neutral-800 pt-3">
           <div>
-            <label className="mb-1 block text-[11px] text-neutral-400">
-              Format
-            </label>
+            <label className="mb-1 block text-[11px] text-neutral-400">Format</label>
             <div className="flex gap-1">
               <button
                 onClick={() => setCustomFormat("jpeg")}
@@ -205,6 +272,36 @@ export function ExportPanel() {
         </div>
       )}
 
+      {/* MVP3: Border */}
+      <div className="border-t border-neutral-800 pt-3">
+        <BorderPanel selected={borderId} onChange={setBorderId} />
+      </div>
+
+      {/* MVP3: Watermark */}
+      <div className="border-t border-neutral-800 pt-3">
+        <WatermarkPanel template={watermark} onChange={setWatermark} />
+      </div>
+
+      {/* MVP3: Filename template */}
+      <div className="border-t border-neutral-800 pt-3">
+        <label className="mb-1 block text-[11px] text-neutral-400">
+          Filename template
+        </label>
+        <input
+          value={filenameTemplate}
+          onChange={(e) => setFilenameTemplate(e.target.value)}
+          className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+        />
+        <p className="mt-1 truncate text-[10px] text-neutral-500" title={suggestedFilename}>
+          → {suggestedFilename || "(no image selected)"}
+        </p>
+        <p className="mt-1 text-[9px] text-neutral-600">
+          Tokens: {"{"}original_name{"}"}, {"{"}style{"}"}, {"{"}preset{"}"},{" "}
+          {"{"}version_kind{"}"}, {"{"}date{"}"}, {"{"}time{"}"}, {"{"}index{"}"},{" "}
+          {"{"}ext{"}"}
+        </p>
+      </div>
+
       {/* Export button */}
       <button
         onClick={handleExport}
@@ -239,19 +336,4 @@ function PresetButton({
       <div className="text-[10px] text-neutral-500">{preset.description}</div>
     </button>
   );
-}
-
-function presetSuffix(id: ExportPresetId, _format: "jpeg" | "png"): string {
-  switch (id) {
-    case "wechat_moments":
-      return "_wechat";
-    case "high_quality_mobile":
-      return "_hq";
-    case "small_file":
-      return "_small";
-    case "archive_png":
-      return "_archive";
-    case "custom":
-      return "_export";
-  }
 }

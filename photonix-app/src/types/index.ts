@@ -139,7 +139,7 @@ export interface ImageEditResult {
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
-export type AppView = "generate" | "library" | "editor" | "settings";
+export type AppView = "generate" | "library" | "editor" | "style" | "settings";
 
 // ─── Image Generation ────────────────────────────────────────────────────────
 
@@ -285,3 +285,174 @@ export interface PromptHistoryEntry {
   versionId: string | null;
   createdAt: string;
 }
+
+// ─── MVP3: Style Profiles ────────────────────────────────────────────────────
+
+export type StyleCategory = "landscape" | "portrait" | "travel" | "custom";
+export type StyleSource = "manual" | "reference_analysis" | "preset";
+export type ColorTemperature = "cool" | "neutral" | "warm";
+export type SaturationLevel = "low" | "natural" | "rich";
+export type ContrastLevel = "soft" | "balanced" | "strong";
+
+export interface ColorMood {
+  temperature: ColorTemperature;
+  saturation: SaturationLevel;
+  contrast: ContrastLevel;
+  shadowTint?: string;
+  highlightTint?: string;
+}
+
+export interface StyleProfile {
+  id: string;
+  name: string;
+  category: StyleCategory;
+  source: StyleSource;
+  referenceImagePath: string | null;
+  description: string;
+  styleSummary: string;
+  positivePrompt: string;
+  negativePrompt: string;
+  colorMood: ColorMood | null;
+  preserveIdentity: boolean;
+  preserveComposition: boolean;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── MVP3: Reference Style Analysis ──────────────────────────────────────────
+
+export interface LocalColorAnalysis {
+  dominantPalette: string[]; // hex strings
+  averageHsl: { h: number; s: number; l: number };
+  warmCoolBalance: number; // -1 (cool) … +1 (warm)
+  saturationMean: number;
+  contrastEstimate: number;
+}
+
+export interface AiStyleAnalysis {
+  summary: string;
+  colorMood: string;
+  temperature: ColorTemperature;
+  saturation: SaturationLevel;
+  contrast: ContrastLevel;
+  shadowBehavior: string;
+  highlightBehavior: string;
+  dominantPalette: string[];
+  landscapeGuidance: string[];
+  portraitGuidance: string[];
+  negativeConstraints: string[];
+  reusablePromptFragment: string;
+}
+
+export interface ReferenceStyleAnalysis {
+  localColor: LocalColorAnalysis;
+  ai: AiStyleAnalysis;
+  draftProfile: StyleProfile;
+}
+
+// ─── MVP3: Multi-Version Candidates ──────────────────────────────────────────
+
+export type CandidateMode =
+  | "natural"
+  | "cinematic"
+  | "clean_bright"
+  | "moody"
+  | "warm"
+  | "cool"
+  | "style_variants";
+
+export interface CandidatePlan {
+  id: string;
+  label: string;
+  promptModifier: string;
+  negativeModifier: string;
+}
+
+export interface EditCandidate {
+  id: string;
+  imageId: string;
+  versionId: string | null;
+  candidateGroupId: string;
+  label: string;
+  promptModifier: string | null;
+  styleProfileId: string | null;
+  isFavorite: boolean;
+  createdAt: string;
+}
+
+// ─── MVP3: Borders, Watermarks, Filename Templates ───────────────────────────
+
+export type BorderTemplateId =
+  | "none"
+  | "thin_white"
+  | "thin_black"
+  | "gallery_mat"
+  | "cinematic_letterbox"
+  | "square_social";
+
+export interface BorderTemplateMeta {
+  id: BorderTemplateId;
+  label: string;
+  description: string;
+  /** Border thickness in pixels. */
+  thickness: number;
+  /** Hex color. */
+  color: string;
+  /** When set, force the canvas to this aspect ratio (e.g. 1.0 for square). */
+  forcedAspect?: number;
+  /** Inner padding inside the colored border. */
+  innerPadding?: number;
+  /** Letterbox bars (top+bottom, no left/right) when true. */
+  letterbox?: boolean;
+}
+
+export const BORDER_TEMPLATES: BorderTemplateMeta[] = [
+  { id: "none", label: "No border", description: "Original image unchanged", thickness: 0, color: "#000000" },
+  { id: "thin_white", label: "Thin white", description: "Subtle clean edge", thickness: 24, color: "#FFFFFF" },
+  { id: "thin_black", label: "Thin black", description: "Editorial look", thickness: 24, color: "#000000" },
+  { id: "gallery_mat", label: "Gallery mat", description: "Wide warm-white mat", thickness: 96, color: "#F5F1E8" },
+  { id: "cinematic_letterbox", label: "Cinematic letterbox", description: "Top + bottom bars", thickness: 80, color: "#000000", letterbox: true },
+  { id: "square_social", label: "Square social", description: "1:1 canvas with white margin", thickness: 64, color: "#FFFFFF", forcedAspect: 1.0 },
+];
+
+export type WatermarkPosition =
+  | "bottom_right"
+  | "bottom_left"
+  | "bottom_center"
+  | "top_right"
+  | "top_left";
+
+export interface WatermarkTemplate {
+  enabled: boolean;
+  text: string;
+  position: WatermarkPosition;
+  /** Font size in pixels at the source resolution. */
+  fontSize: number;
+  /** Hex color. */
+  color: string;
+  /** 0..1 */
+  opacity: number;
+  /** Distance from the edge in pixels. */
+  margin: number;
+}
+
+export const DEFAULT_WATERMARK: WatermarkTemplate = {
+  enabled: false,
+  text: "",
+  position: "bottom_right",
+  fontSize: 28,
+  color: "#FFFFFF",
+  opacity: 0.7,
+  margin: 28,
+};
+
+/**
+ * Filename template tokens replaced at export time.
+ * Supported: {original_name}, {style}, {preset}, {date}, {time}, {index},
+ *            {version_kind}, {ext}
+ */
+export type FilenameTemplate = string;
+
+export const DEFAULT_FILENAME_TEMPLATE: FilenameTemplate =
+  "{original_name}_{preset}.{ext}";

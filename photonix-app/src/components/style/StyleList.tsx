@@ -1,0 +1,75 @@
+import { useStyleStore } from "@/stores/styleStore";
+import type { StyleCategory } from "@/types";
+
+const CATEGORY_LABEL: Record<StyleCategory, string> = {
+  landscape: "Landscape",
+  portrait: "Portrait",
+  travel: "Travel",
+  custom: "Custom",
+};
+
+export function StyleList({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const styles = useStyleStore((s) => s.styles);
+  const defaultStyleId = useStyleStore((s) => s.defaultStyleId);
+
+  const grouped = styles.reduce<Record<string, typeof styles>>((acc, s) => {
+    const key = s.category;
+    acc[key] = acc[key] ?? [];
+    acc[key].push(s);
+    return acc;
+  }, {});
+
+  const categories: StyleCategory[] = ["landscape", "portrait", "travel", "custom"];
+
+  return (
+    <div className="flex-1 overflow-y-auto p-1">
+      {categories.map((cat) => {
+        const list = grouped[cat] ?? [];
+        if (list.length === 0) return null;
+        return (
+          <div key={cat} className="mb-2">
+            <div className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-wide text-neutral-600">
+              {CATEGORY_LABEL[cat]}
+            </div>
+            {list.map((style) => (
+              <button
+                key={style.id}
+                onClick={() => onSelect(style.id)}
+                className={`flex w-full items-start gap-2 rounded px-2 py-1.5 text-left transition-colors ${
+                  selectedId === style.id
+                    ? "bg-neutral-700"
+                    : "hover:bg-neutral-800"
+                }`}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[12px] text-neutral-200">{style.name}</span>
+                    {defaultStyleId === style.id && (
+                      <span className="rounded bg-blue-600/40 px-1 py-0 text-[8px] font-medium text-blue-200">
+                        DEFAULT
+                      </span>
+                    )}
+                    {style.source === "preset" && (
+                      <span className="rounded bg-neutral-700 px-1 py-0 text-[8px] text-neutral-400">
+                        BUILT-IN
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 line-clamp-1 text-[10px] text-neutral-500">
+                    {style.description || style.styleSummary}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

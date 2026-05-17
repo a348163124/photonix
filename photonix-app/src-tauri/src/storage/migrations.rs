@@ -22,6 +22,7 @@ pub fn run(conn: &Connection) -> Result<(), String> {
         (1, MIGRATION_001_INITIAL_SCHEMA),
         (2, MIGRATION_002_GENERATED_IMAGES),
         (3, MIGRATION_003_PROMPT_HISTORY_AND_PRESETS),
+        (4, MIGRATION_004_STYLE_AND_CANDIDATES),
     ];
 
     for (version, sql) in migrations {
@@ -173,5 +174,54 @@ CREATE TABLE IF NOT EXISTS custom_edit_presets (
     preserve_composition INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT
+);
+"#;
+
+const MIGRATION_004_STYLE_AND_CANDIDATES: &str = r#"
+CREATE TABLE IF NOT EXISTS style_profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    source TEXT NOT NULL,
+    reference_image_path TEXT,
+    description TEXT,
+    style_summary TEXT NOT NULL,
+    positive_prompt TEXT NOT NULL,
+    negative_prompt TEXT,
+    color_mood_json TEXT,
+    preserve_identity INTEGER NOT NULL DEFAULT 0,
+    preserve_composition INTEGER NOT NULL DEFAULT 1,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_style_profiles_category ON style_profiles(category);
+CREATE INDEX IF NOT EXISTS idx_style_profiles_is_default ON style_profiles(is_default);
+
+CREATE TABLE IF NOT EXISTS edit_candidates (
+    id TEXT PRIMARY KEY,
+    image_id TEXT NOT NULL,
+    version_id TEXT,
+    candidate_group_id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    prompt_modifier TEXT,
+    style_profile_id TEXT,
+    is_favorite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
+    FOREIGN KEY (version_id) REFERENCES image_versions(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_edit_candidates_image_id ON edit_candidates(image_id);
+CREATE INDEX IF NOT EXISTS idx_edit_candidates_group ON edit_candidates(candidate_group_id);
+
+CREATE TABLE IF NOT EXISTS export_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    template_type TEXT NOT NULL,
+    config_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 );
 "#;

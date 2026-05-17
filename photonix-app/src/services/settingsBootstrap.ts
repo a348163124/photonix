@@ -1,6 +1,8 @@
 import { isTauri, invoke } from "@/services/tauri/invoke";
 import { loadSetting } from "@/services/tauri/settings";
+import { listStyleProfiles } from "@/services/tauri/styles";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { BUILT_IN_STYLES, useStyleStore } from "@/stores/styleStore";
 import type { ExportPresetId, UploadProxyProfile } from "@/types";
 
 /** Non-secret config persisted in SQLite. */
@@ -67,5 +69,24 @@ export async function bootstrapSettings(): Promise<void> {
     }
   } catch (err) {
     console.warn("Failed to load editing prefs:", err);
+  }
+
+  // MVP3: Style profiles — built-ins merged with persisted user styles.
+  try {
+    const userStyles = await listStyleProfiles();
+    const styleStore = useStyleStore.getState();
+    // Built-ins first, then user styles, dedup'd by id (user wins on collisions)
+    const userIds = new Set(userStyles.map((s) => s.id));
+    const merged = [
+      ...userStyles,
+      ...BUILT_IN_STYLES.filter((s) => !userIds.has(s.id)),
+    ];
+    styleStore.setStyles(merged);
+    const defaultStyle = userStyles.find((s) => s.isDefault);
+    if (defaultStyle) {
+      styleStore.setDefaultStyleId(defaultStyle.id);
+    }
+  } catch (err) {
+    console.warn("Failed to load style profiles:", err);
   }
 }

@@ -1,10 +1,13 @@
+pub mod candidates;
 pub mod edit;
 pub mod generate;
 pub mod library;
 pub mod prompt;
+pub mod reference_style;
 pub mod secrets;
+pub mod styles;
 
-use crate::image_core::{scanner, thumbnail};
+use crate::image_core::{border, scanner, thumbnail, watermark};
 use crate::storage::database::Database;
 use crate::storage::repository::{self, FolderRow, ImageRow, ImageVersionRow};
 use serde::{Deserialize, Serialize};
@@ -266,6 +269,10 @@ pub async fn export_image(
     quality: u8,
     // MVP2: when Some, resize so the long edge does not exceed this value.
     max_long_edge: Option<u32>,
+    // MVP3: optional border applied before resize/encode
+    border: Option<border::BorderConfig>,
+    // MVP3: optional text watermark applied after border, before resize/encode
+    watermark: Option<watermark::WatermarkConfig>,
 ) -> Result<String, String> {
     // Validate inputs early so the error message is meaningful
     if !std::path::Path::new(&source_path).exists() {
@@ -283,7 +290,20 @@ pub async fn export_image(
         let mut img = image::open(&src)
             .map_err(|e| format!("Failed to open source ({}): {}", src, e))?;
 
-        // Optional long-edge resize for social-sharing presets
+        // 1. Border / canvas expansion (operates on source resolution)
+        if let Some(cfg) = &border {
+            img = border::apply_border(img, cfg);
+        }
+
+        // 2. Watermark text (rendered before resize so font size is consistent
+        //    relative to the source resolution; resize will scale it down too)
+        if let Some(cfg) = &watermark {
+            if !cfg.text.is_empty() {
+                img = watermark::apply_watermark(img, cfg)?;
+            }
+        }
+
+        // 3. Optional long-edge resize for social-sharing presets
         if let Some(max_edge) = max_long_edge {
             use image::GenericImageView;
             let (w, h) = img.dimensions();

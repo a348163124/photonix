@@ -5,6 +5,7 @@ const navItems: { view: AppView; label: string; icon: string }[] = [
   { view: "generate", label: "Generate", icon: "✨" },
   { view: "library", label: "Library", icon: "📷" },
   { view: "editor", label: "Editor", icon: "✏️" },
+  { view: "style", label: "Style", icon: "🎨" },
   { view: "settings", label: "Settings", icon: "⚙️" },
 ];
 

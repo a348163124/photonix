@@ -7,6 +7,7 @@ import { PromptPanel } from "./PromptPanel";
 import { MaskPanel } from "./MaskPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { ExportPanel } from "./ExportPanel";
+import { CandidateStrip } from "@/components/candidates/CandidateStrip";
 
 type EditorTab = "prompt" | "mask" | "history" | "export";
 
@@ -153,6 +154,9 @@ export function EditorScreen() {
             onMaskChange={setMaskDataUrl}
           />
         </div>
+
+        {/* Candidate strip — only shown when there are candidates or running */}
+        <CandidateStrip />
       </div>
 
       {/* Right panel */}

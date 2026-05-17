@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { useBatchStore } from "@/stores/batchStore";
 import { usePresetsStore } from "@/stores/promptPresets";
+import { useStyleStore } from "@/stores/styleStore";
 import { buildQueueFromSelection, retryItem, runBatch } from "@/services/batchRunner";
 import type { EditPreset, QualityMode } from "@/types";
 
@@ -17,6 +18,11 @@ export function BatchDialog() {
 
   const images = useAppStore((s) => s.images);
   const presets = usePresetsStore((s) => s.presets);
+
+  const styles = useStyleStore((s) => s.styles);
+  const selectedStyleId = useStyleStore((s) => s.selectedStyleId);
+  const defaultStyleId = useStyleStore((s) => s.defaultStyleId);
+  const setSelectedStyleId = useStyleStore((s) => s.setSelectedStyleId);
 
   const [prompt, setPrompt] = useState("");
   const [presetId, setPresetId] = useState<string | null>(null);
@@ -101,6 +107,26 @@ export function BatchDialog() {
                   </button>
                 ))}
             </div>
+          </div>
+
+          {/* MVP3: Style profile selector */}
+          <div className="mt-3">
+            <label className="mb-1 block text-[11px] text-neutral-400">
+              Style profile (applied to every image)
+            </label>
+            <select
+              value={selectedStyleId ?? defaultStyleId ?? ""}
+              onChange={(e) => setSelectedStyleId(e.target.value || null)}
+              className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+            >
+              <option value="">No style (raw prompt)</option>
+              {styles.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {defaultStyleId === s.id ? " (default)" : ""}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Quality */}

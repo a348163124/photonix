@@ -49,6 +49,15 @@ pub fn run() {
             commands::library::upsert_custom_preset,
             commands::library::list_custom_presets,
             commands::library::delete_custom_preset,
+            commands::styles::upsert_style_profile,
+            commands::styles::list_style_profiles,
+            commands::styles::delete_style_profile,
+            commands::styles::set_default_style_profile,
+            commands::reference_style::analyze_reference_style,
+            commands::candidates::record_candidate,
+            commands::candidates::list_candidates_for_image,
+            commands::candidates::set_candidate_favorite,
+            commands::candidates::delete_candidate,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

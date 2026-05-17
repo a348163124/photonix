@@ -27,3 +27,4 @@ walkdir = "2"
 reqwest = { version = "0.12", features = ["json"] }
 base64 = "0.22"
 keyring = { version = "3", features = ["windows-native"] }
+ab_glyph = "0.2"

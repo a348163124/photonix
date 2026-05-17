@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useStyleStore } from "@/stores/styleStore";
+import { useCandidateStore } from "@/stores/candidateStore";
 import { usePresetsStore, BUILT_IN_PRESETS } from "@/stores/promptPresets";
 import { runEditPipeline } from "@/services/editPipeline";
 import { getVersions } from "@/services/tauri/versions";
 import { isTauri } from "@/services/tauri/invoke";
+import { planCandidates } from "@/services/candidates/candidatePlanner";
+import { runCandidates } from "@/services/candidates/candidateRunner";
 import {
   deleteCustomPreset,
   listCustomPresets,
@@ -14,7 +18,13 @@ import {
   upsertCustomPreset,
 } from "@/services/tauri/promptHistory";
 import { toast } from "@/components/ui/Toast";
-import type { EditPreset, PromptHistoryEntry, QualityMode } from "@/types";
+import type {
+  CandidateMode,
+  EditPreset,
+  PromptHistoryEntry,
+  QualityMode,
+  StyleProfile,
+} from "@/types";
 
 export function PromptPanel() {
   const selectedImageId = useAppStore((s) => s.selectedImageId);
@@ -37,6 +47,13 @@ export function PromptPanel() {
   const hasApiKey = useSettingsStore((s) => s.hasApiKey);
   const uploadProxyProfile = useSettingsStore((s) => s.uploadProxyProfile);
 
+  const styles = useStyleStore((s) => s.styles);
+  const selectedStyleId = useStyleStore((s) => s.selectedStyleId);
+  const defaultStyleId = useStyleStore((s) => s.defaultStyleId);
+  const setSelectedStyleId = useStyleStore((s) => s.setSelectedStyleId);
+
+  const candidateRunning = useCandidateStore((s) => s.isRunning);
+
   const addPreset = usePresetsStore((s) => s.addPreset);
   const setPresets = usePresetsStore((s) => s.setPresets);
   const removePresetLocal = usePresetsStore((s) => s.removePreset);
@@ -45,6 +62,12 @@ export function PromptPanel() {
   const [error, setError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [appliedPresetId, setAppliedPresetId] = useState<string | null>(null);
+
+  const [candidateCount, setCandidateCount] = useState<2 | 3 | 4>(3);
+  const [candidateMode, setCandidateMode] = useState<CandidateMode>("natural");
+
+  const activeStyle: StyleProfile | null =
+    styles.find((s) => s.id === (selectedStyleId ?? defaultStyleId)) ?? null;
 
   const selectedImage = images.find((img) => img.id === selectedImageId);
 
@@ -124,6 +147,16 @@ export function PromptPanel() {
     const inputWidth = baseVersion?.width ?? selectedImage.width;
     const inputHeight = baseVersion?.height ?? selectedImage.height;
 
+    // Merge style profile into prompt when one is active.
+    // User instruction wins over style defaults — we put the user prompt first.
+    const finalPrompt = activeStyle
+      ? buildStyledPrompt(prompt, activeStyle)
+      : prompt;
+    const effectivePreserveIdentity =
+      preserveIdentity || (activeStyle?.preserveIdentity ?? false);
+    const effectivePreserveComposition =
+      preserveComposition && (activeStyle?.preserveComposition ?? true);
+
     try {
       const result = await runEditPipeline(
         {
@@ -131,11 +164,11 @@ export function PromptPanel() {
           sourcePath: inputPath,
           sourceWidth: inputWidth,
           sourceHeight: inputHeight,
-          userPrompt: prompt,
+          userPrompt: finalPrompt,
           maskDataUrl,
           qualityMode: mode,
-          preserveIdentity,
-          preserveComposition,
+          preserveIdentity: effectivePreserveIdentity,
+          preserveComposition: effectivePreserveComposition,
           imageType: detectImageType(selectedImage.filename),
           uploadProxyProfile,
         },
@@ -188,6 +221,31 @@ export function PromptPanel() {
     }
   }
 
+  async function handleGenerateCandidates() {
+    if (!selectedImage || !prompt.trim()) {
+      toast("Type a prompt first.", "info");
+      return;
+    }
+    if (!hasApiKey) {
+      setError("Please configure your API key in Settings first.");
+      return;
+    }
+    const plans = planCandidates({
+      count: candidateCount,
+      mode: candidateMode,
+      style: activeStyle,
+    });
+    const groupId = `cand-${crypto.randomUUID()}`;
+
+    void runCandidates({
+      image: selectedImage,
+      basePrompt: prompt,
+      style: activeStyle,
+      plans,
+      groupId,
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {/* Prompt input */}
@@ -237,6 +295,90 @@ export function PromptPanel() {
           />
           Preserve composition
         </label>
+      </div>
+
+      {/* MVP3: Style profile selector */}
+      <div className="rounded bg-neutral-800/50 p-2">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wide text-neutral-500">
+            Style profile
+          </span>
+          {activeStyle && (
+            <button
+              onClick={() => setSelectedStyleId(null)}
+              className="text-[9px] text-neutral-500 hover:text-neutral-200"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <select
+          value={selectedStyleId ?? defaultStyleId ?? ""}
+          onChange={(e) => setSelectedStyleId(e.target.value || null)}
+          className="w-full rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200"
+        >
+          <option value="">No style (raw prompt)</option>
+          {styles.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+              {defaultStyleId === s.id ? " (default)" : ""}
+            </option>
+          ))}
+        </select>
+        {activeStyle && (
+          <p className="mt-1 line-clamp-2 text-[10px] text-neutral-500">
+            {activeStyle.styleSummary}
+          </p>
+        )}
+      </div>
+
+      {/* MVP3: Candidate generation */}
+      <div className="rounded bg-neutral-800/50 p-2">
+        <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+          Multi-version candidates
+        </span>
+        <div className="grid grid-cols-2 gap-1.5">
+          <div>
+            <label className="mb-0.5 block text-[9px] text-neutral-500">Count</label>
+            <div className="flex gap-0.5">
+              {([2, 3, 4] as const).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setCandidateCount(n)}
+                  className={`flex-1 rounded px-1 py-0.5 text-[10px] ${
+                    candidateCount === n
+                      ? "bg-blue-600 text-white"
+                      : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-0.5 block text-[9px] text-neutral-500">Mode</label>
+            <select
+              value={candidateMode}
+              onChange={(e) => setCandidateMode(e.target.value as CandidateMode)}
+              className="w-full rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-200"
+            >
+              <option value="natural">Natural</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="clean_bright">Clean &amp; Bright</option>
+              <option value="moody">Moody</option>
+              <option value="warm">Warm</option>
+              <option value="cool">Cool</option>
+            </select>
+          </div>
+        </div>
+        <button
+          onClick={handleGenerateCandidates}
+          disabled={!prompt.trim() || candidateRunning}
+          className="mt-2 w-full rounded bg-purple-600 px-2 py-1 text-[10px] font-medium text-white transition-colors hover:bg-purple-500 disabled:opacity-40"
+        >
+          {candidateRunning ? "Running candidates..." : `Generate ${candidateCount} candidates`}
+        </button>
       </div>
 
       {/* Actions */}
@@ -397,4 +539,11 @@ function detectImageType(filename: string): "landscape" | "portrait" | "event" |
   if (lower.includes("wedding") || lower.includes("event")) return "event";
   if (lower.includes("landscape") || lower.includes("nature")) return "landscape";
   return "generic";
+}
+
+function buildStyledPrompt(userPrompt: string, style: StyleProfile): string {
+  const parts = [userPrompt.trim()];
+  if (style.positivePrompt) parts.push(`Style: ${style.positivePrompt}`);
+  if (style.negativePrompt) parts.push(`Avoid: ${style.negativePrompt}`);
+  return parts.join(". ").replace(/\.+\s*\./g, ".");
 }

@@ -1,8 +1,10 @@
 import { useBatchStore, type BatchEditItem } from "@/stores/batchStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useStyleStore } from "@/stores/styleStore";
 import { runEditPipeline } from "@/services/editPipeline";
 import { recordPromptHistory } from "@/services/tauri/promptHistory";
 import { toast } from "@/components/ui/Toast";
+import type { StyleProfile } from "@/types";
 
 /**
  * Run all queued items in the batch sequentially.
@@ -18,6 +20,7 @@ export async function runBatch(): Promise<void> {
   const provider = useSettingsStore.getState().provider;
   const profile = useSettingsStore.getState().uploadProxyProfile;
   const hasKey = useSettingsStore.getState().hasApiKey;
+  const style = useStyleStore.getState().selectedStyle();
 
   if (!hasKey) {
     toast("API key not configured. Set it in Settings.", "error");
@@ -33,7 +36,7 @@ export async function runBatch(): Promise<void> {
       const next = items.find((it) => it.status === "queued");
       if (!next) break;
 
-      await runOneItem(next, provider, profile);
+      await runOneItem(next, provider, profile, style);
     }
   } finally {
     store.setRunning(false);
@@ -43,24 +46,33 @@ export async function runBatch(): Promise<void> {
 async function runOneItem(
   item: BatchEditItem,
   provider: ReturnType<typeof useSettingsStore.getState>["provider"],
-  profile: ReturnType<typeof useSettingsStore.getState>["uploadProxyProfile"]
+  profile: ReturnType<typeof useSettingsStore.getState>["uploadProxyProfile"],
+  style: StyleProfile | null
 ): Promise<void> {
   const update = useBatchStore.getState().updateItem;
   update(item.id, { status: "running" });
 
   try {
+    const finalPrompt = style
+      ? `${item.prompt}. Style: ${style.positivePrompt}${
+          style.negativePrompt ? `. Avoid: ${style.negativePrompt}` : ""
+        }`
+      : item.prompt;
+    const preserveIdentity = style?.preserveIdentity ?? false;
+    const preserveComposition = style?.preserveComposition ?? true;
+
     await runEditPipeline(
       {
         imageId: item.imageId,
         sourcePath: item.imageSourcePath,
         sourceWidth: item.imageWidth,
         sourceHeight: item.imageHeight,
-        userPrompt: item.prompt,
+        userPrompt: finalPrompt,
         maskDataUrl: "", // batch mode = global edit, no mask
         qualityMode: item.qualityMode,
-        preserveIdentity: false,
-        preserveComposition: true,
-        imageType: "landscape",
+        preserveIdentity,
+        preserveComposition,
+        imageType: style?.category === "portrait" ? "portrait" : "landscape",
         uploadProxyProfile: profile,
       },
       provider
