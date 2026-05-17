@@ -19,19 +19,20 @@ interface RustValidateResult {
 
 /**
  * Validate provider connectivity and model availability.
- * Runs entirely through Rust to avoid CORS/CSP restrictions in the WebView
- * and to keep the API key out of the JS request path.
+ *
+ * Runs entirely through Rust. The API key is loaded from the OS secret
+ * store inside the Rust command — it never enters JS state.
  */
 export async function checkProviderCompatibility(
   config: ProviderConfig
 ): Promise<CompatibilityResult> {
-  if (!config.baseUrl || !config.apiKey) {
+  if (!config.baseUrl) {
     return {
       connected: false,
       textModelAvailable: false,
       imageModelAvailable: false,
       warnings: [],
-      error: "Base URL and API key are required",
+      error: "Base URL is required",
     };
   }
 
@@ -49,7 +50,6 @@ export async function checkProviderCompatibility(
     const result = await invoke<RustValidateResult>("validate_provider", {
       request: {
         base_url: config.baseUrl,
-        api_key: config.apiKey,
         text_model: config.textModel,
         image_model: config.imageModel,
       },

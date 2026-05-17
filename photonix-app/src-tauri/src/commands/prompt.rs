@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::secrets;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompilePromptRequest {
     pub user_prompt: String,
@@ -10,7 +12,6 @@ pub struct CompilePromptRequest {
     pub mask_present: bool,
     pub quality_mode: String,
     pub base_url: String,
-    pub api_key: String,
     pub text_model: String,
 }
 
@@ -25,11 +26,15 @@ pub struct CompiledPromptResult {
 }
 
 /// Compile a user prompt into a structured edit instruction via the text model.
-/// Runs entirely in Rust — no CORS issues, API key stays in native layer.
+/// Runs entirely in Rust — no CORS issues, API key never enters the JS layer.
 #[tauri::command]
 pub async fn compile_prompt(
+    app: tauri::AppHandle,
     request: CompilePromptRequest,
 ) -> Result<CompiledPromptResult, String> {
+    let api_key = secrets::read_api_key(&app)?
+        .ok_or("No API key configured. Please set it in Settings.")?;
+
     let system_prompt = build_system_prompt(&request);
 
     let body = serde_json::json!({
@@ -50,7 +55,7 @@ pub async fn compile_prompt(
     let client = reqwest::Client::new();
     let response = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", request.api_key))
+        .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&body)
         .timeout(std::time::Duration::from_secs(30))

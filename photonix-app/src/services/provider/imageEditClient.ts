@@ -9,10 +9,12 @@ interface SubmitEditResult {
 }
 
 /**
- * Sends an image edit request via the Tauri backend.
+ * Submit an image edit via the Tauri backend.
+ *
  * The Rust side handles:
+ * - Reading the API key from the OS secret store
  * - Reading image bytes from disk
- * - Reading mask bytes from disk
+ * - Reading mask bytes from disk and adapting them to provider semantics
  * - Multipart upload to provider
  * - Saving returned image to versions directory
  * - Creating version record in SQLite
@@ -40,16 +42,6 @@ export async function editImage(
     maskPath = input.maskPath;
   }
 
-  // Load API key from secure storage
-  const apiKey = await invoke<string | null>("load_api_key");
-  if (!apiKey) {
-    return {
-      success: false,
-      outputPath: null,
-      error: "No API key configured. Please set it in Settings.",
-    };
-  }
-
   const result = await invoke<SubmitEditResult>("submit_edit", {
     request: {
       image_id: input.metadata.imageId,
@@ -59,7 +51,6 @@ export async function editImage(
       quality_mode: input.qualityMode,
       upload_proxy_profile: input.uploadProxyProfile ?? null,
       base_url: config.baseUrl,
-      api_key: apiKey,
       image_model: config.imageModel,
     },
   });
@@ -68,5 +59,6 @@ export async function editImage(
     success: result.success,
     outputPath: result.output_path,
     error: result.error,
+    versionId: result.version_id ?? undefined,
   };
 }

@@ -39,11 +39,12 @@ export function GeneratePromptPanel() {
   const prependImage = useGenerateStore((s) => s.prependImage);
 
   const provider = useSettingsStore((s) => s.provider);
+  const hasApiKey = useSettingsStore((s) => s.hasApiKey);
 
   async function handleGenerate() {
     if (!prompt.trim() || isGenerating) return;
 
-    if (!provider.apiKey) {
+    if (!hasApiKey) {
       setLastError("Please configure your API key in Settings first.");
       return;
     }

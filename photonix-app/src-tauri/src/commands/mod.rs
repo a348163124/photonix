@@ -346,7 +346,6 @@ pub fn chrono_now() -> String {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ValidateProviderRequest {
     pub base_url: String,
-    pub api_key: String,
     pub text_model: String,
     pub image_model: String,
 }
@@ -362,6 +361,7 @@ pub struct ValidateProviderResult {
 
 #[tauri::command]
 pub async fn validate_provider(
+    app: tauri::AppHandle,
     request: ValidateProviderRequest,
 ) -> Result<ValidateProviderResult, String> {
     let mut result = ValidateProviderResult {
@@ -372,17 +372,25 @@ pub async fn validate_provider(
         error: None,
     };
 
-    if request.base_url.is_empty() || request.api_key.is_empty() {
-        result.error = Some("Base URL and API key are required".to_string());
+    if request.base_url.is_empty() {
+        result.error = Some("Base URL is required".to_string());
         return Ok(result);
     }
+
+    let api_key = match secrets::read_api_key(&app)? {
+        Some(k) => k,
+        None => {
+            result.error = Some("API key is not configured. Save it in Settings first.".to_string());
+            return Ok(result);
+        }
+    };
 
     let url = format!("{}/models", request.base_url.trim_end_matches('/'));
     let client = reqwest::Client::new();
 
     let response = match client
         .get(&url)
-        .header("Authorization", format!("Bearer {}", request.api_key))
+        .header("Authorization", format!("Bearer {}", api_key))
         .timeout(std::time::Duration::from_secs(15))
         .send()
         .await

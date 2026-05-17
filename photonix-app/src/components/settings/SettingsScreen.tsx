@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { isTauri } from "@/services/tauri/invoke";
-import { saveSetting, loadSetting, saveApiKey, loadApiKey } from "@/services/tauri/settings";
+import { saveSetting, saveApiKey, hasApiKey } from "@/services/tauri/settings";
 import { checkProviderCompatibility } from "@/services/provider/compatibility";
 import {
   EXPORT_PRESETS,
@@ -10,7 +10,7 @@ import {
   type UploadProxyProfile,
 } from "@/types";
 
-interface StoredConfig {
+interface StoredProviderConfig {
   baseUrl: string;
   imageModel: string;
   textModel: string;
@@ -32,52 +32,47 @@ const CATEGORIES: { id: SettingsCategory; label: string }[] = [
 
 export function SettingsScreen() {
   const provider = useSettingsStore((s) => s.provider);
-  const setProvider = useSettingsStore((s) => s.setProvider);
+  const hasKey = useSettingsStore((s) => s.hasApiKey);
   const uploadProxyProfile = useSettingsStore((s) => s.uploadProxyProfile);
-  const setUploadProxyProfile = useSettingsStore((s) => s.setUploadProxyProfile);
   const defaultExportPreset = useSettingsStore((s) => s.defaultExportPreset);
-  const setDefaultExportPreset = useSettingsStore((s) => s.setDefaultExportPreset);
 
   const [category, setCategory] = useState<SettingsCategory>("provider");
+
+  // API key is held only in local component state, never in Zustand.
+  // It is empty by default; the user types it in to (re)set, and it is
+  // wiped on save. The actual key lives only in the OS secret store.
+  const [apiKeyDraft, setApiKeyDraft] = useState("");
+
   const [saved, setSaved] = useState(false);
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<string | null>(null);
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
 
-  // Load all settings on mount
-  useEffect(() => {
-    if (!isTauri()) return;
-    loadSetting<StoredConfig>("provider_config").then((config) => {
-      if (config) {
-        setProvider({
-          baseUrl: config.baseUrl,
-          imageModel: config.imageModel,
-          textModel: config.textModel,
-          fallbackTextModel: config.fallbackTextModel,
-        });
-      }
-    });
-    loadApiKey().then((key) => {
-      if (key) setProvider({ apiKey: key });
-    });
-    loadSetting<StoredEditingPrefs>("editing_prefs").then((prefs) => {
-      if (prefs) {
-        setUploadProxyProfile(prefs.uploadProxyProfile);
-        setDefaultExportPreset(prefs.defaultExportPreset);
-      }
-    });
-  }, []);
-
   async function handleSave() {
     if (isTauri()) {
-      const config: StoredConfig = {
+      // Save non-secret config
+      const config: StoredProviderConfig = {
         baseUrl: provider.baseUrl,
         imageModel: provider.imageModel,
         textModel: provider.textModel,
         fallbackTextModel: provider.fallbackTextModel,
       };
       await saveSetting("provider_config", config);
-      await saveApiKey(provider.apiKey);
+
+      // Save API key only if the user typed something. Don't overwrite
+      // an existing stored key with empty when the user is just adjusting
+      // models or base URL.
+      if (apiKeyDraft.length > 0) {
+        await saveApiKey(apiKeyDraft);
+        // Wipe local state immediately so it doesn't linger in memory.
+        setApiKeyDraft("");
+        // Update store flag.
+        useSettingsStore.getState().setHasApiKey(true);
+      } else {
+        // Re-check whether one is currently stored, in case it was deleted.
+        const has = await hasApiKey();
+        useSettingsStore.getState().setHasApiKey(has);
+      }
 
       const prefs: StoredEditingPrefs = {
         uploadProxyProfile,
@@ -89,10 +84,38 @@ export function SettingsScreen() {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  async function handleClearApiKey() {
+    if (!isTauri()) return;
+    const ok = window.confirm(
+      "Remove the saved API key from this computer's secret store?"
+    );
+    if (!ok) return;
+    await saveApiKey(""); // empty string deletes the entry
+    setApiKeyDraft("");
+    useSettingsStore.getState().setHasApiKey(false);
+  }
+
   async function handleValidate() {
     setValidating(true);
     setValidationResult(null);
     setValidationWarnings([]);
+
+    // If the user just typed a new key but hasn't saved yet, save it
+    // first so validate_provider can find it in the secret store.
+    if (apiKeyDraft.length > 0) {
+      try {
+        await saveApiKey(apiKeyDraft);
+        setApiKeyDraft("");
+        useSettingsStore.getState().setHasApiKey(true);
+      } catch (err) {
+        setValidationResult(
+          `Failed to save key before validating: ${err instanceof Error ? err.message : String(err)}`
+        );
+        setValidating(false);
+        return;
+      }
+    }
+
     const result = await checkProviderCompatibility(provider);
     if (result.error) {
       setValidationResult(result.error);
@@ -127,6 +150,10 @@ export function SettingsScreen() {
       <div className="flex-1 overflow-y-auto p-6">
         {category === "provider" && (
           <ProviderSection
+            apiKeyDraft={apiKeyDraft}
+            setApiKeyDraft={setApiKeyDraft}
+            hasKey={hasKey}
+            onClearKey={handleClearApiKey}
             saved={saved}
             validating={validating}
             validationResult={validationResult}
@@ -145,6 +172,10 @@ export function SettingsScreen() {
 }
 
 function ProviderSection({
+  apiKeyDraft,
+  setApiKeyDraft,
+  hasKey,
+  onClearKey,
   saved,
   validating,
   validationResult,
@@ -152,6 +183,10 @@ function ProviderSection({
   onSave,
   onValidate,
 }: {
+  apiKeyDraft: string;
+  setApiKeyDraft: (v: string) => void;
+  hasKey: boolean;
+  onClearKey: () => void;
   saved: boolean;
   validating: boolean;
   validationResult: string | null;
@@ -172,13 +207,33 @@ function ProviderSection({
         onChange={(v) => setProvider({ baseUrl: v })}
         placeholder="https://api.openai.com/v1"
       />
-      <Field
-        label="API Key"
-        value={provider.apiKey}
-        onChange={(v) => setProvider({ apiKey: v })}
-        type="password"
-        placeholder="sk-..."
-      />
+
+      {/* API key — local-only field */}
+      <div>
+        <label className="mb-1 flex items-center justify-between text-[11px] text-neutral-400">
+          <span>API Key</span>
+          {hasKey && (
+            <span className="text-[10px] text-green-400">✓ Saved</span>
+          )}
+        </label>
+        <input
+          type="password"
+          value={apiKeyDraft}
+          onChange={(e) => setApiKeyDraft(e.target.value)}
+          placeholder={hasKey ? "•••••••• (already saved — type to replace)" : "sk-..."}
+          autoComplete="off"
+          spellCheck={false}
+          className="w-full rounded bg-neutral-800 px-2 py-1.5 text-xs text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-neutral-600"
+        />
+        {hasKey && (
+          <button
+            onClick={onClearKey}
+            className="mt-1 text-[10px] text-neutral-500 hover:text-red-400"
+          >
+            Clear saved key
+          </button>
+        )}
+      </div>
 
       <div className="border-t border-neutral-800 pt-4">
         <h3 className="mb-3 text-xs font-medium text-neutral-300">Models</h3>
@@ -209,7 +264,7 @@ function ProviderSection({
         </button>
         <button
           onClick={onValidate}
-          disabled={validating || !provider.apiKey}
+          disabled={validating || (!hasKey && !apiKeyDraft)}
           className="rounded bg-neutral-700 px-4 py-1.5 text-xs font-medium text-neutral-200 hover:bg-neutral-600 transition-colors disabled:opacity-40"
         >
           {validating ? "Validating..." : "Validate Connection"}
@@ -238,9 +293,10 @@ function ProviderSection({
       )}
 
       <p className="text-[10px] text-neutral-600 mt-2">
-        API keys are stored in a separate encrypted file outside the database.
-        Model configuration is stored locally in SQLite. Keys are never logged or
-        sent anywhere except the configured provider URL.
+        Your API key is stored in the Windows Credential Manager (or your platform's
+        equivalent secret store). It is never written to the database, never logged,
+        and is read only by the native layer when an edit, generation, or validation
+        request needs it.
       </p>
     </div>
   );

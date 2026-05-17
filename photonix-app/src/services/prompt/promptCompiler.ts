@@ -1,4 +1,4 @@
-import type { PromptCompileInput, CompiledPrompt, ProviderConfig } from "@/types";
+import type { CompiledPrompt, PromptCompileInput, ProviderConfig } from "@/types";
 import { invoke, isTauri } from "@/services/tauri/invoke";
 
 interface RustCompiledPrompt {
@@ -12,15 +12,16 @@ interface RustCompiledPrompt {
 
 /**
  * Compile a user prompt into a structured edit instruction.
- * Calls the Rust backend which handles the text model request —
- * no CORS issues, API key stays in native layer.
+ *
+ * The text-model HTTP call happens entirely in Rust, which also reads the
+ * API key from the OS secret store. The plaintext key never enters JS.
  */
 export async function compileEditPrompt(
   input: PromptCompileInput,
   config: ProviderConfig
 ): Promise<CompiledPrompt> {
   if (!isTauri()) {
-    // Fallback: return a simple pass-through for browser dev
+    // Browser dev fallback: minimal pass-through
     return {
       editGoal: input.userPrompt,
       editScope: input.maskPresent ? "local_masked_region" : "global",
@@ -29,12 +30,6 @@ export async function compileEditPrompt(
       negativeConstraints: [],
       qualityMode: input.qualityMode,
     };
-  }
-
-  // Load API key from secure storage
-  const apiKey = await invoke<string | null>("load_api_key");
-  if (!apiKey) {
-    throw new Error("No API key configured. Please set it in Settings.");
   }
 
   const result = await invoke<RustCompiledPrompt>("compile_prompt", {
@@ -47,7 +42,6 @@ export async function compileEditPrompt(
       mask_present: input.maskPresent,
       quality_mode: input.qualityMode,
       base_url: config.baseUrl,
-      api_key: apiKey,
       text_model: config.textModel,
     },
   });

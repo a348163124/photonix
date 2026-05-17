@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
 use uuid::Uuid;
 
+use super::secrets;
+
 // ─── Upload Proxy Profiles ───────────────────────────────────────────────────
 //
 // MVP2: Three configurable profiles. Default is "recommended" — a balance
@@ -59,7 +61,6 @@ pub struct SubmitEditRequest {
     /// Defaults to "recommended" when omitted.
     pub upload_proxy_profile: Option<String>,
     pub base_url: String,
-    pub api_key: String,
     pub image_model: String,
 }
 
@@ -84,6 +85,9 @@ pub async fn submit_edit(
     db: State<'_, Database>,
     request: SubmitEditRequest,
 ) -> Result<SubmitEditResult, String> {
+    let api_key = secrets::read_api_key(&app)?
+        .ok_or("No API key configured. Please set it in Settings.")?;
+
     let profile = profile_for(request.upload_proxy_profile.as_deref());
 
     // 1. Build a profile-bounded upload proxy so large photography sources stay responsive.
@@ -149,7 +153,7 @@ pub async fn submit_edit(
     let client = reqwest::Client::new();
     let response = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", request.api_key))
+        .header("Authorization", format!("Bearer {}", api_key))
         .header(
             "Content-Type",
             format!("multipart/form-data; boundary={}", boundary),

@@ -17,8 +17,9 @@ export async function runBatch(): Promise<void> {
 
   const provider = useSettingsStore.getState().provider;
   const profile = useSettingsStore.getState().uploadProxyProfile;
+  const hasKey = useSettingsStore.getState().hasApiKey;
 
-  if (!provider.apiKey) {
+  if (!hasKey) {
     toast("API key not configured. Set it in Settings.", "error");
     store.setRunning(false);
     return;

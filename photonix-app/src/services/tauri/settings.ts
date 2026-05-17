@@ -1,16 +1,12 @@
 import { invoke, isTauri } from "./invoke";
 
-/**
- * Save a non-secret setting to SQLite.
- */
+/** Save a non-secret setting to SQLite. */
 export async function saveSetting(key: string, value: unknown): Promise<void> {
   if (!isTauri()) return;
   await invoke("save_setting", { key, value: JSON.stringify(value) });
 }
 
-/**
- * Load a non-secret setting from SQLite.
- */
+/** Load a non-secret setting from SQLite. */
 export async function loadSetting<T>(key: string): Promise<T | null> {
   if (!isTauri()) return null;
   const raw = await invoke<string | null>("load_setting", { key });
@@ -19,7 +15,8 @@ export async function loadSetting<T>(key: string): Promise<T | null> {
 }
 
 /**
- * Save API key to secure storage (NOT SQLite).
+ * Save the API key to the OS secret store (Windows Credential Manager).
+ * The key never persists in JS state after this call returns.
  */
 export async function saveApiKey(apiKey: string): Promise<void> {
   if (!isTauri()) return;
@@ -27,9 +24,13 @@ export async function saveApiKey(apiKey: string): Promise<void> {
 }
 
 /**
- * Load API key from secure storage.
+ * Check whether an API key is configured.
+ *
+ * Note: there is no public `loadApiKey()` wrapper. Reading the actual key
+ * value happens only inside Rust commands. The frontend should never need
+ * the plaintext key.
  */
-export async function loadApiKey(): Promise<string | null> {
-  if (!isTauri()) return null;
-  return invoke<string | null>("load_api_key");
+export async function hasApiKey(): Promise<boolean> {
+  if (!isTauri()) return false;
+  return invoke<boolean>("has_api_key");
 }

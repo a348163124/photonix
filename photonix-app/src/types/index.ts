@@ -67,9 +67,16 @@ export interface Prompt {
 
 // ─── Provider Types ──────────────────────────────────────────────────────────
 
+/**
+ * Non-secret provider configuration.
+ *
+ * The API key is intentionally NOT part of this type. It lives only in the
+ * platform secret store (Windows Credential Manager via the Rust `keyring`
+ * crate). The frontend only knows whether one is configured (see
+ * `SettingsState.hasApiKey`).
+ */
 export interface ProviderConfig {
   baseUrl: string;
-  apiKey: string;
   imageModel: string;
   textModel: string;
   fallbackTextModel: string;
@@ -126,6 +133,8 @@ export interface ImageEditResult {
   success: boolean;
   outputPath: string | null;
   error: string | null;
+  /** Newly created version id when the edit succeeded. */
+  versionId?: string;
 }
 
 // ─── Navigation ──────────────────────────────────────────────────────────────

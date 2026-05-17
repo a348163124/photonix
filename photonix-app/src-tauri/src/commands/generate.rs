@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
 use uuid::Uuid;
 
+use super::secrets;
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -13,7 +15,6 @@ pub struct GenerateImageRequest {
     pub size: String,         // "1024x1024" | "1792x1024" | "1024x1792" | "auto"
     pub quality: String,      // "standard" | "hd" | "auto"
     pub base_url: String,
-    pub api_key: String,
     pub image_model: String,
 }
 
@@ -53,6 +54,9 @@ pub async fn generate_image(
         });
     }
 
+    let api_key = secrets::read_api_key(&app)?
+        .ok_or("No API key configured. Please set it in Settings.")?;
+
     let body = serde_json::json!({
         "model": request.image_model,
         "prompt": request.prompt,
@@ -70,7 +74,7 @@ pub async fn generate_image(
     let client = reqwest::Client::new();
     let response = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", request.api_key))
+        .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&body)
         .timeout(std::time::Duration::from_secs(180))

@@ -35,8 +35,9 @@ export interface GenerateOutput {
 
 /**
  * Generate a new image from a text prompt.
- * Loads the API key from secure storage, then invokes Rust to call
- * the provider's /images/generations endpoint.
+ *
+ * Rust handles reading the API key from the OS secret store and the
+ * provider call. The plaintext key never enters JS.
  */
 export async function generateImage(input: GenerateInput): Promise<GenerateOutput> {
   if (!isTauri()) {
@@ -47,22 +48,12 @@ export async function generateImage(input: GenerateInput): Promise<GenerateOutpu
     };
   }
 
-  const apiKey = await invoke<string | null>("load_api_key");
-  if (!apiKey) {
-    return {
-      success: false,
-      image: null,
-      error: "No API key configured. Please set it in Settings.",
-    };
-  }
-
   const result = await invoke<RawGenerateResult>("generate_image", {
     request: {
       prompt: input.prompt,
       size: input.size,
       quality: input.quality,
       base_url: input.baseUrl,
-      api_key: apiKey,
       image_model: input.imageModel,
     },
   });

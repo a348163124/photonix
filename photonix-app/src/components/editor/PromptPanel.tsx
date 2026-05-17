@@ -34,6 +34,7 @@ export function PromptPanel() {
   const prependRecentPrompt = useEditorStore((s) => s.prependRecentPrompt);
 
   const provider = useSettingsStore((s) => s.provider);
+  const hasApiKey = useSettingsStore((s) => s.hasApiKey);
   const uploadProxyProfile = useSettingsStore((s) => s.uploadProxyProfile);
 
   const addPreset = usePresetsStore((s) => s.addPreset);
@@ -107,7 +108,7 @@ export function PromptPanel() {
 
   async function handleGenerate(mode: QualityMode) {
     if (!selectedImage || !prompt.trim()) return;
-    if (!provider.apiKey) {
+    if (!hasApiKey) {
       setError("Please configure your API key in Settings first.");
       return;
     }
@@ -162,13 +163,19 @@ export function PromptPanel() {
         console.error("Failed to persist prompt history:", err)
       );
 
-      // Refresh version list and set the new version as active
+      // Refresh version list and activate the version that was just created.
+      // We trust the version_id returned by submit_edit rather than guessing
+      // from the order of the list.
       if (isTauri()) {
         const versions = await getVersions(selectedImage.id);
         useAppStore.getState().setCurrentVersions(versions);
-        const newest = versions[versions.length - 1];
-        if (newest) {
-          useAppStore.getState().setActiveVersion(newest.id);
+        const newVersionId = result.editResult.versionId;
+        const target =
+          (newVersionId && versions.find((v) => v.id === newVersionId)) ||
+          versions.find((v) => v.isCurrent) ||
+          versions[versions.length - 1];
+        if (target) {
+          useAppStore.getState().setActiveVersion(target.id);
         }
       }
     } catch (err) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useBatchStore } from "@/stores/batchStore";
@@ -26,6 +26,10 @@ export function LibraryScreen() {
 
   const [importError, setImportError] = useState<string | null>(null);
   const [thumbCache, setThumbCache] = useState<Record<string, string>>({});
+  // Refs mirror the cache and an in-flight set so the worker loop can read
+  // them synchronously without re-running on every state update.
+  const thumbCacheRef = useRef<Record<string, string>>({});
+  const inFlightRef = useRef<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
 
   useEffect(() => {
@@ -37,12 +41,20 @@ export function LibraryScreen() {
   // Generate thumbnails for visible images
   useEffect(() => {
     if (!isTauri() || images.length === 0) return;
-    generateThumbnailsBatch(images.slice(0, THUMBNAIL_BATCH_SIZE));
+    void generateThumbnailsBatch(images.slice(0, THUMBNAIL_BATCH_SIZE));
   }, [images]);
 
   async function generateThumbnailsBatch(batch: ImageAsset[]) {
-    const queue = batch.filter((img) => !thumbCache[img.id]);
+    const queue = batch.filter(
+      (img) =>
+        !thumbCacheRef.current[img.id] && !inFlightRef.current.has(img.id)
+    );
     if (queue.length === 0) return;
+
+    // Reserve all queued ids up front so concurrent re-renders won't
+    // double-enqueue them.
+    queue.forEach((img) => inFlightRef.current.add(img.id));
+
     let index = 0;
     async function worker() {
       while (index < queue.length) {
@@ -51,9 +63,15 @@ export function LibraryScreen() {
         if (!img) continue;
         try {
           const result = await generateThumbnail(img.id, img.sourcePath);
-          setThumbCache((prev) => ({ ...prev, [img.id]: result.thumb_path }));
+          thumbCacheRef.current = {
+            ...thumbCacheRef.current,
+            [img.id]: result.thumb_path,
+          };
+          setThumbCache(thumbCacheRef.current);
         } catch (err) {
           console.warn(`Thumbnail failed for ${img.filename}:`, err);
+        } finally {
+          inFlightRef.current.delete(img.id);
         }
       }
     }
