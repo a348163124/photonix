@@ -48,16 +48,27 @@ export function SettingsScreen() {
   const [validationResult, setValidationResult] = useState<string | null>(null);
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
 
+  /**
+   * Persist current provider baseURL and model fields to SQLite.
+   * Does NOT touch the API key (handled separately) and does NOT toggle
+   * the "✓ Saved" indicator. Used by both Save and Validate so that
+   * validating right after editing baseURL/models also persists those
+   * changes for the next session.
+   */
+  async function persistProviderConfig() {
+    if (!isTauri()) return;
+    const config: StoredProviderConfig = {
+      baseUrl: provider.baseUrl,
+      imageModel: provider.imageModel,
+      textModel: provider.textModel,
+      fallbackTextModel: provider.fallbackTextModel,
+    };
+    await saveSetting("provider_config", config);
+  }
+
   async function handleSave() {
     if (isTauri()) {
-      // Save non-secret config
-      const config: StoredProviderConfig = {
-        baseUrl: provider.baseUrl,
-        imageModel: provider.imageModel,
-        textModel: provider.textModel,
-        fallbackTextModel: provider.fallbackTextModel,
-      };
-      await saveSetting("provider_config", config);
+      await persistProviderConfig();
 
       // Save API key only if the user typed something. Don't overwrite
       // an existing stored key with empty when the user is just adjusting
@@ -99,6 +110,20 @@ export function SettingsScreen() {
     setValidating(true);
     setValidationResult(null);
     setValidationWarnings([]);
+
+    // Persist whatever the user has typed BEFORE validating, so that
+    // a successful validation can't be undone by a later restart that
+    // reverts to the previously saved baseURL/models. This avoids the
+    // "validated, but the next session uses old values" footgun.
+    try {
+      await persistProviderConfig();
+    } catch (err) {
+      setValidationResult(
+        `Failed to save settings before validating: ${err instanceof Error ? err.message : String(err)}`
+      );
+      setValidating(false);
+      return;
+    }
 
     // If the user just typed a new key but hasn't saved yet, save it
     // first so validate_provider can find it in the secret store.
